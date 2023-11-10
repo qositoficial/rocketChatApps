@@ -1,0 +1,16 @@
+{
+    "id": "21f9f178-5410-4c0a-854c-c6ff74d1c992",
+    "version": "1.0.0",
+    "requiredApiVersion": "^1.19.0",
+    "iconFile": "icon.png",
+    "author": {
+        "name": "Q.o.S Information Technology",
+        "homepage": "https://qosit.com.br",
+        "support": "https://github.com/qositoficial/integrationGLPI"
+    },
+    "name": "GLPI",
+    "nameSlug": "glpi",
+    "classFile": "GlpiApp.ts",
+    "description": "Added integrations with GLPI Helpdesk API",
+    "implements": []
+}

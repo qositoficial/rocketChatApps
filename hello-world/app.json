@@ -1,0 +1,16 @@
+{
+    "id": "2e00587d-0300-4d54-8043-d3eb2f7fcf22",
+    "version": "0.0.1",
+    "requiredApiVersion": "^1.19.0",
+    "iconFile": "icon.png",
+    "author": {
+        "name": "Diego",
+        "homepage": "qosit.com.br",
+        "support": "suporte.qosit.com.br"
+    },
+    "name": "Hello World",
+    "nameSlug": "hello-world",
+    "classFile": "HelloWorldApp.ts",
+    "description": "A basic app that prints Hello World!",
+    "implements": []
+}

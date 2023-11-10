@@ -1,0 +1,6 @@
+{
+    "glpi_url_label": "URL do Servidor GLPI",
+    "glpi_url_description": "Entre com a URL no seguinte formato: https://enderecoDoServidor",
+    "glpi_app_token_label": "Token da Aplicação API GLPI",
+    "glpi_app_token_description": "Gere o token em -> Configuração -> Geral -> Clientes da API"
+}
