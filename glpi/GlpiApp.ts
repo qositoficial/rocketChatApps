@@ -18,8 +18,16 @@ import {
     ILivechatRoom,
     IPostLivechatRoomClosed,
 } from "@rocket.chat/apps-engine/definition/livechat";
+import ProcessDataService from "./src/services/ProcessData";
+import {
+    IMessage,
+    IPostMessageSent,
+} from "@rocket.chat/apps-engine/definition/messages";
 
-export class GlpiApp extends App implements IPostLivechatRoomClosed {
+export class GlpiApp
+    extends App
+    implements IPostMessageSent, IPostLivechatRoomClosed
+{
     constructor(info: IAppInfo, logger: ILogger, accessors: IAppAccessors) {
         super(info, logger, accessors);
     }
@@ -33,16 +41,45 @@ export class GlpiApp extends App implements IPostLivechatRoomClosed {
         );
     }
 
+    public async executePostMessageSent(
+        message: IMessage,
+        read: IRead,
+        http: IHttp,
+        persistence: IPersistence,
+        modify: IModify
+    ): Promise<void> {
+        const data = await ProcessDataService.ProcessData(
+            "Message",
+            read,
+            persistence,
+            message.room as ILivechatRoom,
+            message,
+            this.getLogger()
+        );
+        // this.getLogger().debug('m: 4');
+        if (!data) {
+            return;
+        }
+
+        return;
+    }
+
     public async executePostLivechatRoomClosed(
         room: ILivechatRoom,
         read: IRead,
         http: IHttp,
-        persis: IPersistence,
+        persistence: IPersistence,
         modify?: IModify | undefined
     ): Promise<void> {
         // Pegar dados da conversa
-        // const data = ProcessDataService.ProcessData('LivechatSession',read,persistence, room,undefined,this.getLogger());
-        const data = "dados";
+        const data = await ProcessDataService.ProcessData(
+            "LivechatSession",
+            read,
+            persistence,
+            room,
+            undefined,
+            this.getLogger()
+        );
 
         if (!data) {
             return;
