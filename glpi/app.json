@@ -12,5 +12,7 @@
     "nameSlug": "glpi",
     "classFile": "GlpiApp.ts",
     "description": "Added integrations with GLPI Helpdesk API",
-    "implements": []
+    "implements": [
+        "IPostLivechatRoomClosed"
+    ]
 }
