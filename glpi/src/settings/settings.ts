@@ -6,11 +6,13 @@ import {
 export enum AppSetting {
     GlpiUrl = "glpi_url",
     GlpiAppToken = "glpi_app_token",
+    GlpiUserToken = "glpi_user_token",
 }
 
 export enum DefaultMessage {
-    DEFAULT_GlpiUrl = "http://glpi",
-    DEFAULT_GlpiAppToken = "Your API Client Token",
+    DEFAULT_GlpiUrl = "https://glpi.qosit.com.br", // "http://glpi",
+    DEFAULT_GlpiAppToken = "ZANLMVZsZGdVX5ssjT5qtEpuAWkwh6CFG8eO8JcN", // "Your API Client Token",
+    DEFAULT_GlpiUserToken = "AvLTALMT41WOuTsIotJHA9wAdjQ0LSukIcI24NxU", //"Your API User Token",
 }
 
 export const settings: Array<ISetting> = [
@@ -30,6 +32,15 @@ export const settings: Array<ISetting> = [
         packageValue: DefaultMessage.DEFAULT_GlpiAppToken,
         i18nLabel: "glpi_app_token_label",
         i18nDescription: "glpi_app_token_description",
+        required: true,
+    },
+    {
+        id: AppSetting.GlpiUserToken,
+        public: true,
+        type: SettingType.STRING,
+        packageValue: DefaultMessage.DEFAULT_GlpiUserToken,
+        i18nLabel: "glpi_user_token_label",
+        i18nDescription: "glpi_user_token_description",
         required: true,
     },
 ];

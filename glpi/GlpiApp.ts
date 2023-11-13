@@ -23,6 +23,7 @@ import {
     IMessage,
     IPostMessageSent,
 } from "@rocket.chat/apps-engine/definition/messages";
+import SearchUserService from "./src/services/SearchUser";
 
 export class GlpiApp
     extends App
@@ -56,10 +57,19 @@ export class GlpiApp
             message,
             this.getLogger()
         );
-        // this.getLogger().debug('m: 4');
+
         if (!data) {
             return;
         }
+
+        const userPhone = data.visitor.phone;
+
+        const glpiUserID = await SearchUserService.SearchUser(
+            http,
+            read,
+            this.getLogger(),
+            userPhone
+        );
 
         return;
     }
