@@ -235,6 +235,74 @@ export default class ProcessDataService {
             // logger.debug("ProcessData 12");
         }
 
+        let mailAddress = "";
+        if (
+            servedBy &&
+            servedBy.emails &&
+            servedBy.emails[0] &&
+            servedBy.emails[0].address
+        ) {
+            mailAddress = servedBy.emails[0].address || "";
+        }
+
+        if (servedBy) {
+            data = {
+                ...data,
+                agent: {
+                    _id: servedBy.id || "",
+                    name: servedBy.name || "",
+                    username: servedBy.username || "",
+                    email: mailAddress,
+                    UserType: servedBy.type || "",
+                },
+            };
+        }
+        if (logger) {
+            // logger.debug("ProcessData 13");
+        }
+
+        const liveVisitor = livechatRoom.visitor;
+
+        if (!liveVisitor) {
+            return;
+        }
+
+        data = {
+            ...data,
+            visitor: liveVisitor || {},
+            departmentName: livechatRoom.department?.name,
+        };
+        if (logger) {
+            // logger.debug("ProcessData 14");
+        }
+
+        if (
+            data.visitor &&
+            data.visitor.visitorEmails &&
+            data.visitor.visitorEmails[0] &&
+            data.visitor.visitorEmails[0].address
+        ) {
+            data.visitor = {
+                ...data.visitor,
+                email: data.visitor.visitorEmails[0].address,
+            };
+        }
+
+        if (
+            data.visitor &&
+            data.visitor.phone &&
+            data.visitor.phone[0] &&
+            data.visitor.phone[0].phoneNumber
+        ) {
+            data.visitor = {
+                ...data.visitor,
+                phone: data.visitor.phone[0].phoneNumber,
+            };
+        }
+        if (logger) {
+            // logger.debug("ProcessData 15");
+        }
+
         return data;
     }
 }
