@@ -3,6 +3,7 @@ import {
     ILogger,
     IRead,
 } from "@rocket.chat/apps-engine/definition/accessors";
+import { ApiGlpiTimeout } from "../settings/constants";
 
 export default class SearchUserService {
     public static async SearchUser(
@@ -50,7 +51,7 @@ export default class SearchUserService {
         const ResponseSessionToken = await http.get(
             GlpiUrl + "/apirest.php/initSession/",
             {
-                timeout: 30000,
+                timeout: ApiGlpiTimeout,
                 headers: {
                     "App-Token": AppToken,
                     Authorization: UserToken,
@@ -87,6 +88,12 @@ export default class SearchUserService {
         const ResponseUserID = await http.get(
             GlpiUrl + "/apirest.php/search/User/",
             {
+                timeout: ApiGlpiTimeout,
+                headers: {
+                    "App-Token": AppToken,
+                    "Session-Token": SessionToken,
+                    "Content-Type": "application/json",
+                },
                 params: {
                     "criteria[0][link]": "OR",
                     "criteria[0][field]": "6",
@@ -100,11 +107,6 @@ export default class SearchUserService {
                     // "criteria[2][field]": "2",
                     // "criteria[2][searchtype]": "contains",
                     // "criteria[2][value]": "",
-                },
-                headers: {
-                    "App-Token": AppToken,
-                    "Session-Token": SessionToken,
-                    "Content-Type": "application/json",
                 },
             }
         );
