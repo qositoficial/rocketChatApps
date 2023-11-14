@@ -10,6 +10,7 @@ export default class SearchUserService {
         http: IHttp,
         read: IRead,
         logger: ILogger,
+        SessionToken: string,
         userPhone: string
     ): Promise<any> {
         // Extrair código de área
