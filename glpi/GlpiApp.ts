@@ -25,6 +25,7 @@ import {
 } from "@rocket.chat/apps-engine/definition/messages";
 import SearchUserService from "./src/services/SearchUser";
 import GlpiInitSessionService from "./src/services/GlpiInitSession";
+import GlpiKillSessionService from "./src/services/GlpiKillSession";
 
 export class GlpiApp
     extends App
@@ -63,7 +64,7 @@ export class GlpiApp
             return;
         }
 
-        const SessionToken = GlpiInitSessionService.GlpiInitSession(
+        const SessionToken = await GlpiInitSessionService.GlpiInitSession(
             http,
             read,
             this.getLogger()
@@ -71,12 +72,19 @@ export class GlpiApp
 
         const userPhone = data.visitor.phone;
 
-        const glpiUserID = await SearchUserService.SearchUser(
+        // const glpiUserID = await SearchUserService.SearchUser(
+        //     http,
+        //     read,
+        //     this.getLogger(),
+        //     SessionToken,
+        //     userPhone
+        // );
+
+        await GlpiKillSessionService.GlpiKillSession(
             http,
             read,
             this.getLogger(),
-            SessionToken,
-            userPhone
+            SessionToken
         );
 
         return;
