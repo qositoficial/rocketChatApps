@@ -72,13 +72,13 @@ export class GlpiApp
 
         const userPhone = data.visitor.phone;
 
-        // const glpiUserID = await SearchUserService.SearchUser(
-        //     http,
-        //     read,
-        //     this.getLogger(),
-        //     SessionToken,
-        //     userPhone
-        // );
+        const glpiUserID = await SearchUserService.SearchUser(
+            http,
+            read,
+            this.getLogger(),
+            SessionToken,
+            userPhone
+        );
 
         await GlpiKillSessionService.GlpiKillSession(
             http,
