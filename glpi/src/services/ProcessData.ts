@@ -108,6 +108,8 @@ export default class ProcessDataService {
                     .getServerSettings()
                     .getValueById("Site_Url");
                 let fileType = "application/octet-stream";
+                // let MessageAttachment = {};
+                // MessageAttachment["data"] = message.attachments[0];
 
                 let attachUrl =
                     message.attachments[0].imageUrl ||
@@ -156,6 +158,7 @@ export default class ProcessDataService {
                 messageAsObject["file"] = {
                     type: fileType,
                     name: message.attachments[0].title?.value,
+                    data: message.attachments[0],
                 };
 
                 messageAsObject["fileUpload"] = {
@@ -163,7 +166,7 @@ export default class ProcessDataService {
                 };
 
                 if (logger) {
-                    // logger.debug("ProcessData 5");
+                    // logger.debug("ProcessData 5 - ");
                 }
             }
 
@@ -172,7 +175,7 @@ export default class ProcessDataService {
                 .readByAssociation(roomPersisAss);
 
             if (logger) {
-                // logger.debug("ProcessData 6");
+                // logger.debug("ProcessData 6 - ");
             }
 
             let newMessage = {};

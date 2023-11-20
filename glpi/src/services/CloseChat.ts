@@ -9,8 +9,8 @@ import {
     ILivechatRoom,
 } from "@rocket.chat/apps-engine/definition/livechat";
 
-export default class GlpiCloseChatService {
-    public static async GlpiCloseChat(
+export default class CloseChatService {
+    public static async CloseChat(
         http: IHttp,
         read: IRead,
         logger: ILogger,
@@ -22,6 +22,27 @@ export default class GlpiCloseChatService {
             let text = "";
 
             for (let i: number = 0; i < data.messages.length; i++) {
+                if (logger) {
+                    // logger.debug("GlpiCloseChat 1 - ");
+                }
+
+                if (data.messages[i].fileUpload) {
+                    if (data.messages[i].file.data.videoType) {
+                        data.messages[i]["file"].type =
+                            data.messages[i].file.data.videoType;
+                    } else if (data.messages[i].file.data.audioType) {
+                        data.messages[i]["file"].type =
+                            data.messages[i].file.data.audioType;
+                    } else if (data.messages[i].file.data.imageType) {
+                        data.messages[i]["file"].type =
+                            data.messages[i].file.data.imageType;
+                    }
+                }
+
+                if (logger) {
+                    // logger.debug("GlpiCloseChat 2 - ");
+                }
+
                 const updatedAtString = data.messages[i].updatedAt;
                 const updatedAtDate = new Date(updatedAtString);
 
@@ -65,7 +86,7 @@ export default class GlpiCloseChatService {
             http.post(
                 "https://webhook.site/1ec69daa-d4d1-4bc5-a6b0-34c71afa4e52",
                 {
-                    content: text,
+                    content: JSON.stringify(data.messages),
                 }
             );
         }

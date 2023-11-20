@@ -27,7 +27,7 @@ import SearchUserService from "./src/services/SearchUser";
 import GlpiInitSessionService from "./src/services/GlpiInitSession";
 import GlpiKillSessionService from "./src/services/GlpiKillSession";
 import { RoomType } from "@rocket.chat/apps-engine/definition/rooms";
-import GlpiCloseChatService from "./src/services/GlpiCloseChat";
+import CloseChatService from "./src/services/CloseChat";
 
 export class GlpiApp
     extends App
@@ -112,7 +112,7 @@ export class GlpiApp
             userPhone
         );
 
-        await GlpiCloseChatService.GlpiCloseChat(
+        await CloseChatService.CloseChat(
             http,
             read,
             this.getLogger(),
