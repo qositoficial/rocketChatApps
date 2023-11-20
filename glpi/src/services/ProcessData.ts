@@ -179,13 +179,13 @@ export default class ProcessDataService {
             if (
                 !roomMessages ||
                 !roomMessages[0] ||
-                !roomMessages[0]["Messages"]
+                !roomMessages[0]["messages"]
             ) {
                 newMessage = {
                     messages: [messageAsObject],
                 };
             } else {
-                const rMsg = roomMessages[0]["Messages"];
+                const rMsg = roomMessages[0]["messages"];
                 newMessage = {
                     messages: [...rMsg, messageAsObject],
                 };
@@ -213,8 +213,8 @@ export default class ProcessDataService {
             // logger.debug("ProcessData 9");
         }
 
-        if (roomMessages && roomMessages[0] && roomMessages[0]["Messages"]) {
-            roomMessagesArray = roomMessages[0]["Messages"];
+        if (roomMessages && roomMessages[0] && roomMessages[0]["messages"]) {
+            roomMessagesArray = roomMessages[0]["messages"];
         }
         if (logger) {
             // logger.debug("ProcessData 10");

@@ -26,6 +26,8 @@ import {
 import SearchUserService from "./src/services/SearchUser";
 import GlpiInitSessionService from "./src/services/GlpiInitSession";
 import GlpiKillSessionService from "./src/services/GlpiKillSession";
+import { RoomType } from "@rocket.chat/apps-engine/definition/rooms";
+import GlpiCloseChatService from "./src/services/GlpiCloseChat";
 
 export class GlpiApp
     extends App
@@ -51,6 +53,14 @@ export class GlpiApp
         persistence: IPersistence,
         modify: IModify
     ): Promise<void> {
+        if (!message.text && !message.attachments) {
+            return;
+        }
+
+        if (message.room.type !== RoomType.LIVE_CHAT) {
+            return;
+        }
+
         const data = await ProcessDataService.ProcessData(
             "Message",
             read,
@@ -63,31 +73,6 @@ export class GlpiApp
         if (!data) {
             return;
         }
-
-        const SessionToken = await GlpiInitSessionService.GlpiInitSession(
-            http,
-            read,
-            this.getLogger()
-        );
-
-        const userPhone = data.visitor.phone;
-
-        const glpiUserID = await SearchUserService.SearchUser(
-            http,
-            read,
-            this.getLogger(),
-            SessionToken,
-            userPhone
-        );
-
-        await GlpiKillSessionService.GlpiKillSession(
-            http,
-            read,
-            this.getLogger(),
-            SessionToken
-        );
-
-        return;
     }
 
     public async executePostLivechatRoomClosed(
@@ -110,9 +95,38 @@ export class GlpiApp
         if (!data) {
             return;
         }
-        // Atualizar o chamado
-        // const TicketID = await CloseChatService.CloseChat(http, read, this.getLogger(), data)]
-        const ticketID = "Número do Chamado";
+
+        const userPhone = data.visitor.phone;
+
+        const SessionToken = await GlpiInitSessionService.GlpiInitSession(
+            http,
+            read,
+            this.getLogger()
+        );
+
+        const GlpiUserID = await SearchUserService.SearchUser(
+            http,
+            read,
+            this.getLogger(),
+            SessionToken,
+            userPhone
+        );
+
+        await GlpiCloseChatService.GlpiCloseChat(
+            http,
+            read,
+            this.getLogger(),
+            data,
+            SessionToken,
+            GlpiUserID
+        );
+
+        await GlpiKillSessionService.GlpiKillSession(
+            http,
+            read,
+            this.getLogger(),
+            SessionToken
+        );
 
         return;
     }
