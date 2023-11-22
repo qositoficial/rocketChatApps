@@ -13,19 +13,22 @@ export default class SearchUserService {
         SessionToken: string,
         userPhone: string
     ): Promise<any> {
-        // Extrair código de área
-        const codeArea = userPhone.slice(2, 4);
-        // remover prefixo "55" + codeArea
-        userPhone = userPhone.slice(4);
-        // Verificar se o primeiro dígito é 7, 8 ou 9
-        const firstDigit = userPhone.charAt(0);
-        const isMobile = ["7", "8", "9"].includes(firstDigit);
-        if (isMobile && userPhone.length < 9) {
-            userPhone = "9" + userPhone;
-        }
-        userPhone = codeArea + userPhone;
-        if (logger) {
-            // logger.debug("SearchUser 01");
+        if (userPhone) {
+            // Extrair código de área
+            const codeArea = userPhone.slice(2, 4);
+            // remover prefixo "55" + codeArea
+            userPhone = userPhone.slice(4);
+            // Verificar se o primeiro dígito é 7, 8 ou 9
+            const firstDigit = userPhone.charAt(0);
+            const isMobile = ["7", "8", "9"].includes(firstDigit);
+            if (isMobile && userPhone.length < 9) {
+                userPhone = "9" + userPhone;
+            }
+            userPhone = codeArea + userPhone;
+
+            if (logger) {
+                // logger.debug("SearchUser 01");
+            }
         }
 
         const GlpiUrl: string = await read

@@ -63,6 +63,7 @@ export class GlpiApp
 
         const data = await ProcessDataService.ProcessData(
             "Message",
+            http,
             read,
             persistence,
             message.room as ILivechatRoom,
@@ -85,6 +86,7 @@ export class GlpiApp
         // Pegar dados da conversa
         const data = await ProcessDataService.ProcessData(
             "LivechatSession",
+            http,
             read,
             persistence,
             room,
@@ -104,7 +106,7 @@ export class GlpiApp
             this.getLogger()
         );
 
-        const GlpiUserID = await SearchUserService.SearchUser(
+        const GlpiFullUser = await SearchUserService.SearchUser(
             http,
             read,
             this.getLogger(),
@@ -118,7 +120,7 @@ export class GlpiApp
             this.getLogger(),
             data,
             SessionToken,
-            GlpiUserID
+            GlpiFullUser
         );
 
         await GlpiKillSessionService.GlpiKillSession(

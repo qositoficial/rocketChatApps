@@ -1,4 +1,5 @@
 import {
+    IHttp,
     ILogger,
     IPersistence,
     IRead,
@@ -13,10 +14,12 @@ import {
 } from "@rocket.chat/apps-engine/definition/metadata";
 import { UserType } from "@rocket.chat/apps-engine/definition/users";
 import { userInfo } from "os";
+import ConvertBase64Service from "./ConvertBase64";
 
 export default class ProcessDataService {
     public static async ProcessData(
         eventType: string,
+        http: IHttp,
         read: IRead,
         persistence: IPersistence,
         room: ILivechatRoom,
@@ -103,6 +106,9 @@ export default class ProcessDataService {
             }
 
             if (message.attachments) {
+                if (logger) {
+                    // logger.debug("ProcessData 4 - ");
+                }
                 const serverUrl = await read
                     .getEnvironmentReader()
                     .getServerSettings()
@@ -121,44 +127,43 @@ export default class ProcessDataService {
                     attachUrl = `${serverUrl + attachUrl}`;
                 }
 
-                if (message.attachments[0].title?.value?.match(/.png$/gi)) {
-                    fileType = "image/png";
-                } else if (
-                    message.attachments[0].title?.value?.match(
-                        /\.(jpg|jpeg)$/gi
-                    )
-                ) {
-                    fileType = "image/jpeg";
-                } else if (
-                    message.attachments[0].title?.value?.match(/\.gif$/gi)
-                ) {
-                    fileType = "image/giv";
-                } else if (
-                    message.attachments[0].title?.value?.match(/\.ogg$/gi)
-                ) {
-                    fileType = "audio/ogg";
-                } else if (
-                    message.attachments[0].title?.value?.match(/\.mp3$/gi)
-                ) {
-                    // Note, Zenvia API is not compatible right now with audio/mp3, so, let's use audio/mp4
-                    fileType = "audio/mp4";
-                } else if (
-                    message.attachments[0].title?.value?.match(/\.wav$/gi)
-                ) {
-                    fileType = "audio/wav";
-                } else if (
-                    message.attachments[0].title?.value?.match(/\.mp4$/gi)
-                ) {
-                    fileType = "video/mp4";
-                } else if (
-                    message.attachments[0].title?.value?.match(/\.pdf$/gi)
-                ) {
-                    fileType = "application/pdf";
-                }
+                // if (message.attachments[0].title?.value?.match(/.png$/gi)) {
+                //     fileType = "image/png";
+                // } else if (
+                //     message.attachments[0].title?.value?.match(
+                //         /\.(jpg|jpeg)$/gi
+                //     )
+                // ) {
+                //     fileType = "image/jpeg";
+                // } else if (
+                //     message.attachments[0].title?.value?.match(/\.gif$/gi)
+                // ) {
+                //     fileType = "image/giv";
+                // } else if (
+                //     message.attachments[0].title?.value?.match(/\.ogg$/gi)
+                // ) {
+                //     fileType = "audio/ogg";
+                // } else if (
+                //     message.attachments[0].title?.value?.match(/\.mp3$/gi)
+                // ) {
+                //     // Note, Zenvia API is not compatible right now with audio/mp3, so, let's use audio/mp4
+                //     fileType = "audio/mp4";
+                // } else if (
+                //     message.attachments[0].title?.value?.match(/\.wav$/gi)
+                // ) {
+                //     fileType = "audio/wav";
+                // } else if (
+                //     message.attachments[0].title?.value?.match(/\.mp4$/gi)
+                // ) {
+                //     fileType = "video/mp4";
+                // } else if (
+                //     message.attachments[0].title?.value?.match(/\.pdf$/gi)
+                // ) {
+                //     fileType = "application/pdf";
+                // }
                 messageAsObject["file"] = {
-                    type: fileType,
+                    type: message.file?.type,
                     name: message.attachments[0].title?.value,
-                    data: message.attachments[0],
                 };
 
                 messageAsObject["fileUpload"] = {
