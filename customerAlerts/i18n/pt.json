@@ -4,5 +4,7 @@
     "config_notify_room_transferred_label": "Notificação transferência de sala",
     "config_notify_room_transferred_description": "Notificar usuário (cliente) do Omnichannel quando a sala for transferida.",
     "config_message_add_agent_name_label": "Informar nome do atendente",
-    "config_message_add_agent_name_description": "Na primeira mensagem de uma sequência de mensagens do atendente, adicionar antes do texto o seu nome para informar com quem está sendo realizado a conversa."
+    "config_message_add_agent_name_description": "Na primeira mensagem de uma sequência de mensagens do atendente, adicionar antes do texto o seu nome para informar com quem está sendo realizado a conversa.",
+    "config_notify_close_chat_label": "Notificação de encerramento de chat",
+    "config_notify_close_chat_description": "Notificar usuário (cliente) do Omnichannel quando um chat for encerrado."
 }

@@ -13,6 +13,8 @@ import {
 import {
     CONFIG_MESSAGE_ADD_AGENT_NAME,
     CONFIG_NOTIFY_AGENT_ASSIGNED,
+    CONFIG_NOTIFY_AGENT_ASSIGNED_TEXT,
+    CONFIG_NOTIFY_CLOSE_CHAT,
     CONFIG_NOTIFY_ROOM_TRANSFERRED,
     SETTINGS,
     getSettingValue,
@@ -24,6 +26,7 @@ import {
     ILivechatRoom,
     ILivechatTransferEventContext,
     IPostLivechatAgentAssigned,
+    IPostLivechatRoomClosed,
     IPostLivechatRoomTransferred,
     LivechatTransferEventType,
 } from "@rocket.chat/apps-engine/definition/livechat";
@@ -37,6 +40,9 @@ import {
 } from "@rocket.chat/apps-engine/definition/metadata";
 import { RoomType } from "@rocket.chat/apps-engine/definition/rooms";
 import { IUser, UserType } from "@rocket.chat/apps-engine/definition/users";
+import LivechatRoomTransferredService from "./src/services/LivechatRoomTransferredService";
+import LivechatAgentAssignedService from "./src/services/LivechatAgentAssignedService";
+import MessageSentService from "./src/services/MessageSentService";
 
 export class CustomerAlertsApp
     extends App
@@ -74,25 +80,12 @@ export class CustomerAlertsApp
             return;
         }
 
-        if (context.room.type !== RoomType.LIVE_CHAT) {
-            return;
-        }
-
-        const messageText =
-            context.type === LivechatTransferEventType.AGENT
-                ? "Você foi transferido para outro atendente"
-                : "Você foi transferido para o departamento " + context.to.name;
-
-        const appUser = (await read.getUserReader().getAppUser()) as IUser;
-
-        const message = modify
-            .getCreator()
-            .startLivechatMessage()
-            .setRoom(context.room)
-            .setText(messageText)
-            .setSender(appUser);
-
-        await modify.getCreator().finish(message);
+        await LivechatRoomTransferredService.executePost(
+            context,
+            read,
+            modify,
+            this.getLogger()
+        );
     }
 
     public async [AppMethod.EXECUTEPREMESSAGESENTMODIFY](
@@ -111,25 +104,11 @@ export class CustomerAlertsApp
             return builder.getMessage();
         }
 
-        if (message.room.type !== RoomType.LIVE_CHAT) {
-            return await builder.getMessage();
-        }
-
-        if (message.sender.type !== UserType.USER) {
-            return await builder.getMessage();
-        }
-
-        const room = message.room as ILivechatRoom;
-
-        if (!room.isWaitingResponse) {
-            return await builder.getMessage();
-        }
-
-        const messageText = `*[${message.sender.name}]*\n\n${message.text}`;
-
-        builder.setText(messageText);
-
-        return await builder.getMessage();
+        return await MessageSentService.executePre(
+            message,
+            builder,
+            this.getLogger()
+        );
     }
 
     public async [AppMethod.EXECUTE_POST_LIVECHAT_AGENT_ASSIGNED](
@@ -147,22 +126,11 @@ export class CustomerAlertsApp
         if (!allowExecute) {
             return;
         }
-
-        if (context.room.type !== RoomType.LIVE_CHAT) {
-            return;
-        }
-
-        const appUser = (await read.getUserReader().getAppUser()) as IUser;
-
-        const message = modify
-            .getCreator()
-            .startLivechatMessage()
-            .setRoom(context.room)
-            .setText(
-                `O atendente *${context.agent.name}* iniciou o atendimento.`
-            )
-            .setSender(appUser);
-
-        await modify.getCreator().finish(message);
+        await LivechatAgentAssignedService.executePost(
+            context,
+            read,
+            modify,
+            this.getLogger()
+        );
     }
 }
