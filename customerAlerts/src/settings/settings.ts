@@ -6,7 +6,7 @@ import {
 } from "@rocket.chat/apps-engine/definition/settings";
 
 export const CONFIG_NOTIFY_AGENT_ASSIGNED = "notify_agent_assigned";
-export const CONFIG_NOTIFY_AGENT_ASSIGNED_TEXT = "notify_agent_assigned_text";
+// export const CONFIG_NOTIFY_AGENT_ASSIGNED_TEXT = "notify_agent_assigned_text";
 export const CONFIG_NOTIFY_ROOM_TRANSFERRED = "notify_room_transferred";
 export const CONFIG_MESSAGE_ADD_AGENT_NAME = "message_add_agent_name";
 export const CONFIG_NOTIFY_CLOSE_CHAT = "notify_close_chat";
@@ -21,15 +21,15 @@ export const SETTINGS: Array<ISetting> = [
         i18nLabel: `config_${CONFIG_NOTIFY_AGENT_ASSIGNED}_label`,
         i18nDescription: `config_${CONFIG_NOTIFY_AGENT_ASSIGNED}_description`,
     },
-    {
-        id: CONFIG_NOTIFY_AGENT_ASSIGNED_TEXT,
-        type: SettingType.STRING,
-        packageValue: "",
-        required: true,
-        public: false,
-        i18nLabel: `config_${CONFIG_NOTIFY_AGENT_ASSIGNED_TEXT}_label`,
-        i18nDescription: `config_${CONFIG_NOTIFY_AGENT_ASSIGNED_TEXT}_description`,
-    },
+    // {
+    //     id: CONFIG_NOTIFY_AGENT_ASSIGNED_TEXT,
+    //     type: SettingType.STRING,
+    //     packageValue: "",
+    //     required: true,
+    //     public: false,
+    //     i18nLabel: `config_${CONFIG_NOTIFY_AGENT_ASSIGNED_TEXT}_label`,
+    //     i18nDescription: `config_${CONFIG_NOTIFY_AGENT_ASSIGNED_TEXT}_description`,
+    // },
     {
         id: CONFIG_NOTIFY_ROOM_TRANSFERRED,
         type: SettingType.BOOLEAN,
