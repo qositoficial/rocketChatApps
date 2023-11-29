@@ -1,0 +1,20 @@
+{
+    "id": "797af29b-03c5-4f64-b4c9-3f102f8f9667",
+    "version": "1.0.0",
+    "requiredApiVersion": "^1.19.0",
+    "iconFile": "icon.png",
+    "author": {
+        "name": "Q.o.S Information Technology",
+        "homepage": "https://qosit.com.br",
+        "support": "https://github.com/qositoficial/rocketChatApps/customerAlerts"
+    },
+    "name": "Customer Alerts",
+    "nameSlug": "customeralerts",
+    "classFile": "CustomerAlertsApp.ts",
+    "description": "This app notifies the customer when events occur in the chat (Transfer, Pick up, etc.)",
+    "implements": [
+        "IPostLivechatRoomTransferred",
+        "IPreMessageSentModify",
+        "IPostLivechatAgentAssigned"
+    ]
+}
