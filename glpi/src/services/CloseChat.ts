@@ -85,26 +85,20 @@ export default class CloseChatService {
                         base64Full = typeFile;
                         if (typeFile.toLowerCase().startsWith("audio")) {
                             base64Full =
-                                "<div><audio controls><source src='data:" +
-                                typeFile +
-                                ";base64," +
-                                base64String +
+                                "<div><audio controls><source src='" +
+                                data.messages[i].fileUpload.publicFilePath +
                                 "' type='" +
                                 typeFile +
                                 "'>Your browser does not support the audio element.</audio></div>";
                         } else if (typeFile.toLowerCase().startsWith("image")) {
                             base64Full =
-                                '<div><img height="100" src="data:' +
-                                typeFile +
-                                ";base64," +
-                                base64String +
-                                '" alt="image"/></div>';
+                                "<div><img height='100' src='" +
+                                data.messages[i].fileUpload.publicFilePath +
+                                "' alt='image'/></div>";
                         } else if (typeFile.toLowerCase().startsWith("video")) {
                             base64Full =
-                                "<div><video width='160' height='120' controls><source src='data:" +
-                                typeFile +
-                                ";base64," +
-                                base64String +
+                                "<div><video width='160' height='120' controls><source src='" +
+                                data.messages[i].fileUpload.publicFilePath +
                                 "' type='" +
                                 typeFile +
                                 "'>Your browser does not support the video element.</video></div>";
@@ -113,9 +107,7 @@ export default class CloseChatService {
                         ) {
                             base64Full =
                                 "<div><object width='160' height='120' data='data:" +
-                                typeFile +
-                                ";base64," +
-                                base64String +
+                                data.messages[i].fileUpload.publicFilePath +
                                 "' type='" +
                                 typeFile +
                                 "'>Your browser does not support the object element.</object></div>";
