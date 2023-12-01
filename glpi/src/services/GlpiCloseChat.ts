@@ -1,4 +1,3 @@
-import {} from "meteor-promise";
 import {
     IHttp,
     ILogger,
@@ -9,8 +8,8 @@ import {
     ILivechatMessage,
     ILivechatRoom,
 } from "@rocket.chat/apps-engine/definition/livechat";
-import ConvertBase64Service from "./ConvertBase64";
 import { ApiGlpiTimeout } from "../settings/constants";
+import GlpiITILFollowupService from "./GlpiITILFollowup";
 
 export default class CloseChatService {
     public static async CloseChat(
@@ -19,7 +18,8 @@ export default class CloseChatService {
         logger: ILogger,
         data: any,
         SessionToken: string,
-        GlpiFullUser: any
+        GlpiFullUser: any,
+        GlpiFullAgent: any
     ): Promise<void> {
         const GlpiUrl: string = await read
             .getEnvironmentReader()
@@ -35,7 +35,7 @@ export default class CloseChatService {
             let text = "";
             let base64Full = "";
 
-            for (let i: number = 0; i < data.messages.length; i++) {
+            for (let i = data.messages.length - 1; i >= 0; i--) {
                 // Remover o # dos tickets
                 if (data.tags) {
                     for (let i = 0; i < data.tags.length; i++) {
@@ -70,14 +70,20 @@ export default class CloseChatService {
                             timeout: ApiGlpiTimeout,
                             headers: {
                                 "X-Auth-Token":
-                                    "1rMX6Wti7iyyjGaEPTr9f_Qbxdg--V6QyinvfY6iuzf",
-                                "X-User-Id": "rYNAMz9nmeysskEFp",
+                                    "nLWKl4eZPlzWsDhCvafpcuNU90eBBaV4oDR4m6eYG3V",
+                                "X-User-Id": "yqsoCiT3qSQnF6B7Y",
                             },
                         }
                     );
 
                     if (res && res.content && res.headers) {
                         const typeFile = res.headers["content-type"];
+                        if (logger) {
+                            logger.debug(
+                                "GlpiCloseChat 5 - " +
+                                    JSON.stringify(res.headers)
+                            );
+                        }
                         const base64String = Buffer.from(
                             res.content,
                             "binary"
@@ -85,32 +91,34 @@ export default class CloseChatService {
                         base64Full = typeFile;
                         if (typeFile.toLowerCase().startsWith("audio")) {
                             base64Full =
-                                "<div><audio controls><source src='" +
-                                data.messages[i].fileUpload.publicFilePath +
+                                "<audio controls><source src='data:image/jpeg;base64," +
+                                base64String +
                                 "' type='" +
                                 typeFile +
-                                "'>Your browser does not support the audio element.</audio></div>";
+                                "'>Your browser does not support the audio element.</audio>";
                         } else if (typeFile.toLowerCase().startsWith("image")) {
                             base64Full =
-                                "<div><img height='100' src='" +
-                                data.messages[i].fileUpload.publicFilePath +
-                                "' alt='image'/></div>";
-                        } else if (typeFile.toLowerCase().startsWith("video")) {
-                            base64Full =
-                                "<div><video width='160' height='120' controls><source src='" +
-                                data.messages[i].fileUpload.publicFilePath +
+                                "<img height='100' src='data:image/jpeg;base64," +
+                                base64String +
                                 "' type='" +
                                 typeFile +
-                                "'>Your browser does not support the video element.</video></div>";
+                                "' alt='image'/>";
+                        } else if (typeFile.toLowerCase().startsWith("video")) {
+                            base64Full =
+                                "<video width='160' height='120' controls><source src='data:image/jpeg;base64," +
+                                base64String +
+                                "' type='" +
+                                typeFile +
+                                "'>Your browser does not support the video element.</video>";
                         } else if (
                             typeFile.toLowerCase().startsWith("application")
                         ) {
                             base64Full =
-                                "<div><object width='160' height='120' data='data:" +
-                                data.messages[i].fileUpload.publicFilePath +
+                                "<object width='160' height='120' src='data:image/jpeg;base64," +
+                                base64String +
                                 "' type='" +
                                 typeFile +
-                                "'>Your browser does not support the object element.</object></div>";
+                                "'>Your browser does not support the object element.</object>";
                         }
 
                         if (logger) {
@@ -121,81 +129,76 @@ export default class CloseChatService {
 
                 if (data.messages[i] && data.messages[i].fullAgentData) {
                     if (data.messages[i].fileUpload) {
-                        text +=
+                        text =
                             "<p>" +
                             formattedDate +
                             " - " +
                             data.messages[i].fullAgentData.name +
                             " (" +
                             data.messages[i].fullAgentData.username +
-                            "): " +
+                            "): <br> " +
                             base64Full +
                             "</p>";
                     } else {
-                        text +=
+                        text =
                             "<p>" +
                             formattedDate +
                             " - " +
                             data.messages[i].fullAgentData.name +
                             " (" +
                             data.messages[i].fullAgentData.username +
-                            "): " +
+                            "): <br> " +
                             data.messages[i].messageText +
                             "</p>";
                     }
+                    await GlpiITILFollowupService.updateTicket(
+                        http,
+                        read,
+                        logger,
+                        SessionToken,
+                        data.tags[0],
+                        GlpiFullAgent.userID,
+                        GlpiFullAgent.entityID,
+                        text
+                    );
                 } else {
                     if (data.messages[i].fileUpload) {
-                        text +=
+                        text =
                             "<p>" +
                             formattedDate +
                             " - " +
                             data.messages[i].fullUserData.name +
                             " (" +
                             data.messages[i].fullUserData.phone +
-                            "): " +
+                            "): <br> " +
                             base64Full +
                             "</p>";
                     } else {
-                        text +=
+                        text =
                             "<p>" +
                             formattedDate +
                             " - " +
                             data.messages[i].fullUserData.name +
                             " (" +
                             data.messages[i].fullUserData.phone +
-                            "): " +
+                            "): <br> " +
                             data.messages[i].messageText +
                             "</p>";
                     }
+                    await GlpiITILFollowupService.updateTicket(
+                        http,
+                        read,
+                        logger,
+                        SessionToken,
+                        data.tags[0],
+                        GlpiFullUser.userID,
+                        GlpiFullUser.entityID,
+                        text
+                    );
                 }
             }
-
-            const response = await http.post(
-                GlpiUrl +
-                    "/apirest.php/Ticket/" +
-                    data.tags[0] +
-                    "/ITILFollowup",
-                {
-                    timeout: ApiGlpiTimeout,
-                    headers: {
-                        "App-Token": AppToken,
-                        "Session-Token": SessionToken,
-                        "Content-Type": "application/json",
-                    },
-                    data: {
-                        input: {
-                            itemtype: "Ticket",
-                            items_id: data.tags[0],
-                            users_id: GlpiFullUser.userID,
-                            requesttypes_id: 9,
-                            entities_id: 1,
-                            content: text,
-                        },
-                    },
-                }
-            );
             if (logger) {
-                logger.debug("GlpiCloseChat 2 - " + JSON.stringify(response));
+                // logger.debug("GlpiCloseChat 2 - ");
             }
         }
     }

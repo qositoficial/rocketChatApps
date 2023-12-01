@@ -23,11 +23,12 @@ import {
     IMessage,
     IPostMessageSent,
 } from "@rocket.chat/apps-engine/definition/messages";
-import SearchUserService from "./src/services/SearchUser";
+import SearchUserService from "./src/services/GlpiSearchUser";
 import GlpiInitSessionService from "./src/services/GlpiInitSession";
 import GlpiKillSessionService from "./src/services/GlpiKillSession";
 import { RoomType } from "@rocket.chat/apps-engine/definition/rooms";
-import CloseChatService from "./src/services/CloseChat";
+import CloseChatService from "./src/services/GlpiCloseChat";
+import GlpiSearchAgentService from "./src/services/GlpiSearchAgent";
 
 export class GlpiApp
     extends App
@@ -99,6 +100,7 @@ export class GlpiApp
         }
 
         const userPhone = data.visitor.phone;
+        const agentData = data.visitor.agent;
 
         const SessionToken = await GlpiInitSessionService.GlpiInitSession(
             http,
@@ -114,13 +116,22 @@ export class GlpiApp
             userPhone
         );
 
+        const GlpiFullAgent = await GlpiSearchAgentService.searchAgent(
+            http,
+            read,
+            this.getLogger(),
+            SessionToken,
+            agentData
+        );
+
         await CloseChatService.CloseChat(
             http,
             read,
             this.getLogger(),
             data,
             SessionToken,
-            GlpiFullUser
+            GlpiFullUser,
+            GlpiFullAgent
         );
 
         await GlpiKillSessionService.GlpiKillSession(

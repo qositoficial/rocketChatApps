@@ -4,6 +4,7 @@ import {
     IRead,
 } from "@rocket.chat/apps-engine/definition/accessors";
 import { ApiGlpiTimeout } from "../settings/constants";
+import GlpiSearchEntityService from "./GlpiSearchEntity";
 
 export default class SearchUserService {
     public static async SearchUser(
@@ -25,10 +26,6 @@ export default class SearchUserService {
                 userPhone = "9" + userPhone;
             }
             userPhone = codeArea + userPhone;
-
-            if (logger) {
-                // logger.debug("SearchUser 01");
-            }
         }
 
         const GlpiUrl: string = await read
@@ -51,7 +48,7 @@ export default class SearchUserService {
         if (logger) {
             // logger.debug("SearchUser 02");
         }
-
+        // Definir usuário cliente pelo número de telefone
         const response = await http.get(GlpiUrl + "/apirest.php/search/User/", {
             timeout: ApiGlpiTimeout,
             headers: {
@@ -92,7 +89,7 @@ export default class SearchUserService {
 
         const FullUser = JSON.parse(response.content);
 
-        const GlpiFullUser = {
+        let GlpiFullUser = {
             userID: FullUser.data[0][2],
             userName: FullUser.data[0][1],
             email: FullUser.data[0][5],
@@ -101,8 +98,18 @@ export default class SearchUserService {
             entityName: FullUser.data[0][77],
         };
 
+        const entityID = await GlpiSearchEntityService.searchEntity(
+            http,
+            read,
+            logger,
+            SessionToken,
+            GlpiFullUser
+        );
+
+        GlpiFullUser["entityID"] = entityID.entityID;
+
         if (logger) {
-            // logger.debug("SearchUser 03");
+            logger.debug("SearchUser 03 - " + JSON.stringify(GlpiFullUser));
         }
 
         return GlpiFullUser;

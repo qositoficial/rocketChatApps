@@ -14,7 +14,6 @@ import {
 } from "@rocket.chat/apps-engine/definition/metadata";
 import { UserType } from "@rocket.chat/apps-engine/definition/users";
 import { userInfo } from "os";
-import ConvertBase64Service from "./ConvertBase64";
 
 export default class ProcessDataService {
     public static async ProcessData(
@@ -305,6 +304,7 @@ export default class ProcessDataService {
             data.visitor = {
                 ...data.visitor,
                 phone: data.visitor.phone[0].phoneNumber,
+                agent: data.agent,
             };
         }
         if (logger) {
