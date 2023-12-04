@@ -108,9 +108,7 @@ export default class GlpiSearchAgentService {
             GlpiFullAgent["entityID"] = entityID.entityID;
 
             if (logger) {
-                logger.debug(
-                    "SearchAgent 03 - " + JSON.stringify(GlpiFullAgent)
-                );
+                // logger.debug("SearchAgent 03 - ");
             }
 
             return GlpiFullAgent;

@@ -109,7 +109,7 @@ export default class SearchUserService {
         GlpiFullUser["entityID"] = entityID.entityID;
 
         if (logger) {
-            logger.debug("SearchUser 03 - " + JSON.stringify(GlpiFullUser));
+            // logger.debug("SearchUser 03 - ");
         }
 
         return GlpiFullUser;

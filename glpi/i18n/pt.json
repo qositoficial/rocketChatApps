@@ -2,7 +2,13 @@
     "glpi_url_label": "URL do Servidor GLPI",
     "glpi_url_description": "Entre com a URL no seguinte formato: https://enderecoDoServidor",
     "glpi_app_token_label": "Token da Aplicação API GLPI",
-    "glpi_app_token_description": "Gere o token em -> Configuração -> Geral -> Clientes da API",
+    "glpi_app_token_description": "Gere o token em: Configuração -> Geral -> Clientes da API",
     "glpi_user_token_label": "Token de Usuário da API GLPI",
-    "glpi_user_token_description": "Gere o token em -> Administração -> Usuários -> Selecione o Usuário -> API token"
+    "glpi_user_token_description": "Gere o token em: Administração -> Usuários -> Selecione o Usuário -> API token",
+    "glpi_request_source_label": "ID da Origem da Requisição GLPI",
+    "glpi_request_source_description": "Crie um tipo de origem em: Administração -> Listas Suspensas -> Assistância -> Origens da requisição",
+    "rocketchat_auth_token_label": "Token de Acesso Pessoal do Admin do RocketChat",
+    "rocketchat_auth_token_description": "Crie em: Clique no seu usuário admin -> Minha conta -> Tokens de acesso pessoal",
+    "rocketchat_user_id_label": "ID de Usuário do Admin do RocketChat",
+    "rocketchat_user_id_description": "Crie em: Clique no seu usuário admin -> Minha conta -> Tokens de acesso pessoal"
 }

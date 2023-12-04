@@ -31,6 +31,16 @@ export default class CloseChatService {
             .getSettings()
             .getValueById("glpi_app_token");
 
+        const RocketChatAuthToken: string = await read
+            .getEnvironmentReader()
+            .getSettings()
+            .getValueById("rocketchat_auth_token");
+
+        const RocketChatUserID: string = await read
+            .getEnvironmentReader()
+            .getSettings()
+            .getValueById("rocketchat_user_id");
+
         if (data && data.messages) {
             let text = "";
             let base64Full = "";
@@ -69,9 +79,8 @@ export default class CloseChatService {
                             encoding: null,
                             timeout: ApiGlpiTimeout,
                             headers: {
-                                "X-Auth-Token":
-                                    "nLWKl4eZPlzWsDhCvafpcuNU90eBBaV4oDR4m6eYG3V",
-                                "X-User-Id": "yqsoCiT3qSQnF6B7Y",
+                                "X-Auth-Token": RocketChatAuthToken,
+                                "X-User-Id": RocketChatUserID,
                             },
                         }
                     );
@@ -79,10 +88,7 @@ export default class CloseChatService {
                     if (res && res.content && res.headers) {
                         const typeFile = res.headers["content-type"];
                         if (logger) {
-                            logger.debug(
-                                "GlpiCloseChat 5 - " +
-                                    JSON.stringify(res.headers)
-                            );
+                            logger.debug("GlpiCloseChat 1 - ");
                         }
                         const base64String = Buffer.from(
                             res.content,
@@ -122,7 +128,7 @@ export default class CloseChatService {
                         }
 
                         if (logger) {
-                            // logger.debug("GlpiCloseChat 5 - ");
+                            // logger.debug("GlpiCloseChat 2 - ");
                         }
                     }
                 }
@@ -156,7 +162,7 @@ export default class CloseChatService {
                         read,
                         logger,
                         SessionToken,
-                        data.tags[0],
+                        data.tags,
                         GlpiFullAgent.userID,
                         GlpiFullAgent.entityID,
                         text
@@ -190,7 +196,7 @@ export default class CloseChatService {
                         read,
                         logger,
                         SessionToken,
-                        data.tags[0],
+                        data.tags,
                         GlpiFullUser.userID,
                         GlpiFullUser.entityID,
                         text
@@ -198,7 +204,7 @@ export default class CloseChatService {
                 }
             }
             if (logger) {
-                // logger.debug("GlpiCloseChat 2 - ");
+                // logger.debug("GlpiCloseChat 3 - ");
             }
         }
     }
