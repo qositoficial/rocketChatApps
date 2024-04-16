@@ -3,6 +3,7 @@ import {
     ILogger,
     IRead,
 } from "@rocket.chat/apps-engine/definition/accessors";
+
 import {
     CONFIG_GLPI_API_URL,
     CONFIG_GLPI_APP_TOKEN,
@@ -11,12 +12,13 @@ import {
 } from "../settings/settings";
 import { apiTimeout } from "../helpers/constants";
 
-export default class GlpiInitSessionService {
-    public static async GlpiInitSession(
+export default class GlpiKillSessionService {
+    public static async GlpiKillSession(
         http: IHttp,
         read: IRead,
-        logger: ILogger
-    ): Promise<any> {
+        logger: ILogger,
+        SessionToken: string
+    ): Promise<void> {
         const GLPIURL: string = await getSettingValue(
             read.getEnvironmentReader(),
             CONFIG_GLPI_API_URL
@@ -34,21 +36,24 @@ export default class GlpiInitSessionService {
         /*
         if (logger) {
             logger.debug(
-                "GlpiInitSession.ts - Debug 01 - " +
+                "GlpiKillSession.ts - Debug 01 - " +
                     GLPIURL +
                     " " +
                     GLPIAPPTOKEN +
                     " " +
-                    GLPIUSERTOKEN
+                    GLPIUSERTOKEN +
+                    " " +
+                    SessionToken
             );
         }
         */
 
-        const response = await http.get(GLPIURL + "/apirest.php/initSession/", {
+        const response = await http.get(GLPIURL + "/apirest.php/killSession/", {
             timeout: apiTimeout,
             headers: {
                 "App-Token": GLPIAPPTOKEN,
                 Authorization: `user_token ${GLPIUSERTOKEN}`,
+                "Session-Token": SessionToken,
                 "Content-Type": "application/json",
             },
         });
@@ -59,22 +64,20 @@ export default class GlpiInitSessionService {
             response.statusCode !== 200 ||
             (response.content && JSON.parse(response.content)["ERROR"])
         ) {
-            logger.error("GlpiInitSession.ts - Error 01: " + response.content);
+            logger.error("GlpiKillSession.ts - Error 01: " + response.content);
             return undefined;
         }
 
         if (!response || !response.content) {
-            logger.error("GlpiInitSession.ts - Error 02: NO return from GLPI");
+            logger.error("GlpiKillSession.ts - Error 02: NO return from GLPI");
             return undefined;
         }
 
-        const GLPISESSIONTOKEN = JSON.parse(response.content).session_token;
+        const GLPIRESPONSEKIL = JSON.parse(response.content);
         /*
         if (logger) {
-            logger.debug("GlpiInitSession.ts - Debug 02 - " + GLPISESSIONTOKEN);
+            logger.debug("GlpikILLSession.ts - Debug 02 - " + GLPIRESPONSEKIL);
         }
         */
-
-        return GLPISESSIONTOKEN;
     }
 }

@@ -31,6 +31,7 @@ import {
     SETTINGS,
 } from "./src/settings/settings";
 import GlpiInitSessionService from "./src/services/GlpiInitSession";
+import GlpiKillSessionService from "./src/services/GlpiKillSession";
 
 export class GlpiApp
     extends App
@@ -108,15 +109,24 @@ export class GlpiApp
         }
         */
 
+        // const GLPI_SESSION_TOKEN = await GlpiInitSessionService.GlpiInitSession(
+        //     http,
+        //     read,
+        //     this.getLogger()
+        // );
+
         this.getLogger().debug(
-            `Transfer - Debug 01 - ${await GlpiInitSessionService.GlpiInitSession(
+            `Transfer - Debug 01 - ${await GlpiKillSessionService.GlpiKillSession(
                 http,
                 read,
-                this.getLogger()
+                this.getLogger(),
+                await GlpiInitSessionService.GlpiInitSession(
+                    http,
+                    read,
+                    this.getLogger()
+                )
             )}`
         );
-
-        // GlpiInitSessionService.GlpiInitSession(http, read, this.getLogger());
 
         const DEPARTMENTS = await getSettingValue(
             read.getEnvironmentReader(),
