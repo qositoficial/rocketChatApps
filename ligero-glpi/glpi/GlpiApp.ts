@@ -10,6 +10,8 @@ import {
 } from "@rocket.chat/apps-engine/definition/accessors";
 import { App } from "@rocket.chat/apps-engine/definition/App";
 import {
+    ILivechatMessage,
+    ILivechatRoom,
     ILivechatTransferEventContext,
     IPostLivechatRoomClosed,
     IPostLivechatRoomTransferred,
@@ -32,11 +34,9 @@ import {
 } from "./src/settings/settings";
 import GlpiInitSessionService from "./src/services/GlpiInitSession";
 import GlpiKillSessionService from "./src/services/GlpiKillSession";
+import ProcessDataService from "./src/services/ProcessData";
 
-export class GlpiApp
-    extends App
-    implements IPostMessageSent, IPostLivechatRoomTransferred
-{
+export class GlpiApp extends App implements IPostLivechatRoomTransferred {
     constructor(info: IAppInfo, logger: ILogger, acessors: IAppAccessors) {
         super(info, logger, acessors);
     }
@@ -51,6 +51,7 @@ export class GlpiApp
         );
     }
 
+    /*
     public async executePostMessageSent(
         message: IMessage,
         read: IRead,
@@ -88,27 +89,39 @@ export class GlpiApp
         //     await modify.getExtender().finish(roomUp);
         // }
     }
+    */
 
     public async executePostLivechatRoomTransferred(
         context: ILivechatTransferEventContext,
-        // message: IMessage,
         read: IRead,
         http: IHttp,
         persistence: IPersistence,
         modify: IModify
     ): Promise<void> {
-        if (context.type === "department") {
-            this.getLogger().debug(
-                `Conext: ${JSON.stringify(context.room.type)}`
-            );
-        }
-        // this.getLogger().debug(`Conext: ${JSON.stringify(context)}`);
-
         const DEPARTMENTS = await getSettingValue(
             read.getEnvironmentReader(),
             CONFIG_GLPI_DEPARTMENTS
         );
         let firstMessage = 0;
+
+        const data = await ProcessDataService.ProcessData(
+            "Transfer",
+            http,
+            read,
+            persistence,
+            context.room as ILivechatRoom,
+            this.getLogger()
+        );
+
+        const GLPI_SESSION_TOKEN = await GlpiInitSessionService.GlpiInitSession(
+            http,
+            read,
+            this.getLogger()
+        );
+
+        // this.getLogger().debug(
+        //     `dataUser: ${await data} - SessionToken: ${await GLPI_SESSION_TOKEN}`
+        // );
 
         if (
             !context.room.customFields ||
