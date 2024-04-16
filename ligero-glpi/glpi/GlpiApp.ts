@@ -97,36 +97,7 @@ export class GlpiApp
         persistence: IPersistence,
         modify: IModify
     ): Promise<void> {
-        /*
-        // recusa se nao for texto ou anexo
-        if (!message.text && !message.attachments) {
-            return;
-        }
-
-        // recusa se não for livechat
-        if (message.room.type !== RoomType.LIVE_CHAT) {
-            return;
-        }
-        */
-
-        // const GLPI_SESSION_TOKEN = await GlpiInitSessionService.GlpiInitSession(
-        //     http,
-        //     read,
-        //     this.getLogger()
-        // );
-
-        this.getLogger().debug(
-            `Transfer - Debug 01 - ${await GlpiKillSessionService.GlpiKillSession(
-                http,
-                read,
-                this.getLogger(),
-                await GlpiInitSessionService.GlpiInitSession(
-                    http,
-                    read,
-                    this.getLogger()
-                )
-            )}`
-        );
+        this.getLogger().debug(`Conext: ${context}`);
 
         const DEPARTMENTS = await getSettingValue(
             read.getEnvironmentReader(),
