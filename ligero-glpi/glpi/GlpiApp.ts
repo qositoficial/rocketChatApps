@@ -97,7 +97,12 @@ export class GlpiApp
         persistence: IPersistence,
         modify: IModify
     ): Promise<void> {
-        this.getLogger().debug(`Conext: ${context}`);
+        if (context.type === "department") {
+            this.getLogger().debug(
+                `Conext: ${JSON.stringify(context.room.type)}`
+            );
+        }
+        // this.getLogger().debug(`Conext: ${JSON.stringify(context)}`);
 
         const DEPARTMENTS = await getSettingValue(
             read.getEnvironmentReader(),
