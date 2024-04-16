@@ -1,0 +1,10 @@
+{
+    "config_glpi_api_url_label": "URL do GLPI",
+    "config_glpi_api_url_description": "URL do GLPI. Exemplo: http://glpi.seudominio.com",
+    "config_glpi_user_token_label": "Token de Usuário GLPI",
+    "config_glpi_user_token_description": "Token de Usuário GLPI. Gerado na aba de criação de usuário no GLPI",
+    "config_glpi_app_token_label": "Token de App GLPI",
+    "config_glpi_app_token_description": "Token de App GLPI. Gerado na configuração da API no GLPI",
+    "config_glpi_departments_label": "Departamentos para gerar ticket",
+    "config_glpi_departments_description": "Nome dos departamentos do Rocket.Chat para este App ouvir, caso seja mais de um, separe-os com virgula"
+}

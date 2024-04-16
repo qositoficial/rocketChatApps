@@ -1,0 +1,19 @@
+{
+    "id": "2610dfda-933d-40fa-9cea-7e8c6c55eae5",
+    "version": "0.0.1",
+    "requiredApiVersion": "^1.19.0",
+    "iconFile": "icon.png",
+    "author": {
+        "name": "QoS Information Technology",
+        "homepage": "https://github.com/qositoficial/rocketChatApps",
+        "support": "https://github.com/qositoficial/rocketChatApps/issues"
+    },
+    "name": "GLPI",
+    "nameSlug": "glpi",
+    "classFile": "GlpiApp.ts",
+    "description": "GLPI integration with Rocket.Chat",
+    "implements": [
+        "IPostMessageSent",
+        "IPostLivechatRoomTransferred"
+    ]
+}
