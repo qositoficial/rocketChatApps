@@ -35,6 +35,7 @@ import {
 import GlpiInitSessionService from "./src/services/GlpiInitSession";
 import GlpiKillSessionService from "./src/services/GlpiKillSession";
 import ProcessDataService from "./src/services/ProcessData";
+import GlpiUserDataService from "./src/services/GlpiUserData";
 
 export class GlpiApp extends App implements IPostLivechatRoomTransferred {
     constructor(info: IAppInfo, logger: ILogger, acessors: IAppAccessors) {
@@ -104,7 +105,7 @@ export class GlpiApp extends App implements IPostLivechatRoomTransferred {
         );
         let firstMessage = 0;
 
-        const data = await ProcessDataService.ProcessData(
+        const dataUser = await ProcessDataService.ProcessData(
             "Transfer",
             http,
             read,
@@ -117,6 +118,15 @@ export class GlpiApp extends App implements IPostLivechatRoomTransferred {
             http,
             read,
             this.getLogger()
+        );
+
+        const userData = await GlpiUserDataService.searchUser(
+            http,
+            read,
+            this.getLogger(),
+            GLPI_SESSION_TOKEN,
+            dataUser.userPhone,
+            dataUser.username
         );
 
         // this.getLogger().debug(
