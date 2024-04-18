@@ -111,6 +111,8 @@ export default class GlpiUserDataService {
                     "forcedisplay[6]": "6",
                     // primeiro nome - 9
                     "forcedisplay[9]": "9",
+                    // último nome - 34
+                    "forcedisplay[34]": "34",
                     // celular - 11
                     "forcedisplay[11]": "11",
                     // entidade padrão - 77
@@ -198,6 +200,7 @@ export default class GlpiUserDataService {
             email: FULLUSER.data[0][5],
             phone: FULLUSER.data[0][6],
             firstName: FULLUSER.data[0][9],
+            lastName: FULLUSER.data[0][34],
             mobile: FULLUSER.data[0][11],
             entity: {
                 entityID: FULLENTITY.data[0][2],
