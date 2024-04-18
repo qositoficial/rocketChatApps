@@ -29,6 +29,7 @@ import {
     CONFIG_GLPI_APP_TOKEN,
     CONFIG_GLPI_DEPARTMENTS,
     CONFIG_GLPI_USER_TOKEN,
+    CONFIG_GLPI_NEW_TICKET_MESSAGE,
     getSettingValue,
     SETTINGS,
 } from "./src/settings/settings";
@@ -36,6 +37,8 @@ import GlpiInitSessionService from "./src/services/GlpiInitSession";
 import GlpiKillSessionService from "./src/services/GlpiKillSession";
 import ProcessDataService from "./src/services/ProcessData";
 import GlpiUserDataService from "./src/services/GlpiUserData";
+import GlpiCreateTicket from "./src/services/GlpiCreateTicket";
+import GlpiCreateTicketService from "./src/services/GlpiCreateTicket";
 
 export class GlpiApp extends App implements IPostLivechatRoomTransferred {
     constructor(info: IAppInfo, logger: ILogger, acessors: IAppAccessors) {
@@ -103,35 +106,8 @@ export class GlpiApp extends App implements IPostLivechatRoomTransferred {
             read.getEnvironmentReader(),
             CONFIG_GLPI_DEPARTMENTS
         );
+
         let firstMessage = 0;
-
-        const dataUser = await ProcessDataService.ProcessData(
-            "Transfer",
-            http,
-            read,
-            persistence,
-            context.room as ILivechatRoom,
-            this.getLogger()
-        );
-
-        const GLPI_SESSION_TOKEN = await GlpiInitSessionService.GlpiInitSession(
-            http,
-            read,
-            this.getLogger()
-        );
-
-        const userData = await GlpiUserDataService.searchUser(
-            http,
-            read,
-            this.getLogger(),
-            GLPI_SESSION_TOKEN,
-            dataUser.userPhone,
-            dataUser.username
-        );
-
-        // this.getLogger().debug(
-        //     `dataUser: ${await data} - SessionToken: ${await GLPI_SESSION_TOKEN}`
-        // );
 
         if (
             !context.room.customFields ||
@@ -145,11 +121,82 @@ export class GlpiApp extends App implements IPostLivechatRoomTransferred {
             firstMessage = 1;
         }
 
+        const appUser = await read.getUserReader().getAppUser(this.getID());
+
+        const dataUser = await ProcessDataService.ProcessData(
+            "Transfer",
+            http,
+            read,
+            persistence,
+            context.room as ILivechatRoom,
+            this.getLogger()
+        );
+
+        if (!dataUser) {
+            this.getLogger().debug("DEBUG: Not dataUser");
+            return;
+        }
+
+        if (!firstMessage) {
+            this.getLogger().debug("DEBUG: Not firstMessage");
+            return;
+        }
+
         if (context.to.name) {
             if (DEPARTMENTS.includes(context.to.name)) {
+                /*
                 this.getLogger().debug(
                     `Debug 01 - ${JSON.stringify(context.to.name)}`
                 );
+                */
+                const GLPI_SESSION_TOKEN =
+                    await GlpiInitSessionService.GlpiInitSession(
+                        http,
+                        read,
+                        this.getLogger()
+                    );
+
+                const GLPI_FULL_USER = await GlpiUserDataService.searchUser(
+                    http,
+                    read,
+                    this.getLogger(),
+                    GLPI_SESSION_TOKEN,
+                    dataUser.userPhone,
+                    dataUser.username
+                );
+
+                const GLPI_CREATE_TICKET =
+                    (await GlpiCreateTicketService.createTicket(
+                        http,
+                        read,
+                        this.getLogger(),
+                        GLPI_SESSION_TOKEN,
+                        GLPI_FULL_USER,
+                        context.to.name
+                    )) || "";
+
+                if (!GLPI_CREATE_TICKET) {
+                    return;
+                }
+
+                let newTicketMessage = await getSettingValue(
+                    read.getEnvironmentReader(),
+                    CONFIG_GLPI_NEW_TICKET_MESSAGE
+                );
+
+                if (CONFIG_GLPI_NEW_TICKET_MESSAGE) {
+                    newTicketMessage =
+                        "*[Mensagem Automática]*\n" +
+                        newTicketMessage.replace("%s", GLPI_CREATE_TICKET);
+                    const ticketMessage = modify
+                        .getCreator()
+                        .startLivechatMessage();
+                    ticketMessage
+                        .setText(newTicketMessage.toString())
+                        .setRoom(context.room)
+                        .setSender(appUser!);
+                    await modify.getCreator().finish(ticketMessage);
+                }
             }
         }
     }

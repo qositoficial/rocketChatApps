@@ -97,7 +97,7 @@ export default class GlpiUserDataService {
                     "criteria[6][searchtype]": "contains",
                     "criteria[6][value]": userPhone,
                     // celular - 11
-                    "criteria[11][link]": "OR",
+                    "criteria[11][link]": "AND",
                     "criteria[11][field]": "11",
                     "criteria[11][searchtype]": "contains",
                     "criteria[11][value]": userPhone,
@@ -209,13 +209,13 @@ export default class GlpiUserDataService {
                 entityCNPJ: FULLENTITY.data[0][70],
             },
         };
-
+        /*
         if (logger) {
             logger.debug(
                 "GlpiUserData.ts - Debug 05 - " + JSON.stringify(GLPIFULLUSER)
             );
         }
-
+        */
         return GLPIFULLUSER;
     }
 }
