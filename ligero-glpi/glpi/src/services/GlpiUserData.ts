@@ -7,55 +7,20 @@ import { apiTimeout } from "../helpers/constants";
 import {
     CONFIG_GLPI_API_URL,
     CONFIG_GLPI_APP_TOKEN,
+    CONFIG_GLPI_DEFAULT_USER,
     CONFIG_GLPI_USER_TOKEN,
     getSettingValue,
 } from "../settings/settings";
+import GlpiInitSessionService from "./GlpiInitSession";
+import GlpiKillSessionService from "./GlpiKillSession";
 
 export default class GlpiUserDataService {
-    public static async searchUser(
+    private static async getEnv(
         http: IHttp,
         read: IRead,
-        logger: ILogger,
-        SessionToken: string,
-        userPhone: string,
-        userName: string
+        logger: ILogger
     ): Promise<any> {
-        if (userPhone) {
-            // Remover 0 do início
-            if (userPhone.startsWith("0")) {
-                userPhone = userPhone.slice(1);
-            }
-            // Remover código do Brasil
-            if (userPhone.length > 11 && userPhone.startsWith("55")) {
-                userPhone = userPhone.slice(2);
-            }
-            // Extrair código de área
-            const phoneAreaCode = userPhone.slice(0, 2);
-            // remover código de área
-            userPhone = userPhone.slice(2);
-            // Verificar se o primeiro dígito é 7, 8 ou 9
-            const firstDigit = userPhone.charAt(0);
-            const isMobile = ["7", "8", "9"].includes(firstDigit);
-            if (isMobile && userPhone.length < 9) {
-                userPhone = "9" + userPhone;
-            }
-            userPhone = phoneAreaCode + userPhone;
-            /*
-            if (logger) {
-                logger.debug("GlpiUserData.ts - Debug 01 - " + userPhone);
-            }
-            */
-        }
-
-        if (userName) {
-            userName = userName.replace(/\.com(\.br)?$/, "");
-            /*
-            if (logger) {
-                logger.debug("GlpiUserData.ts - Debug 02 - " + userName);
-            }
-            */
-        }
-
+        // Variaveis
         const GLPIURL: string = await getSettingValue(
             read.getEnvironmentReader(),
             CONFIG_GLPI_API_URL
@@ -71,13 +36,51 @@ export default class GlpiUserDataService {
             CONFIG_GLPI_USER_TOKEN
         );
 
+        const GLPISESSIONTOKEN: string =
+            await GlpiInitSessionService.GlpiInitSession(http, read, logger);
+
+        const GLPIDEFAULTUSER: string = await getSettingValue(
+            read.getEnvironmentReader(),
+            CONFIG_GLPI_DEFAULT_USER
+        );
+
+        const ENV = {
+            GLPIURL,
+            GLPIAPPTOKEN,
+            GLPIUSERTOKEN,
+            GLPISESSIONTOKEN,
+            GLPIDEFAULTUSER,
+        };
+        /*
+        if (logger) {
+            logger.debug(`GlpiUserData.ts 01 - getEnv - ${JSON.stringify(ENV)}`);
+        }
+        */
+
+        return ENV;
+    }
+
+    private static async getUser(
+        http: IHttp,
+        read: IRead,
+        logger: ILogger,
+        userPhone: string,
+        userName: string
+    ): Promise<any> {
+        const { GLPIURL, GLPIAPPTOKEN, GLPIUSERTOKEN, GLPISESSIONTOKEN } =
+            await this.getEnv(http, read, logger);
+
+        if (!GLPIURL || !GLPIAPPTOKEN || !GLPIUSERTOKEN || !GLPISESSIONTOKEN) {
+            return undefined;
+        }
+
         const userResponse = await http.get(
             GLPIURL + "/apirest.php/search/User/",
             {
                 timeout: apiTimeout,
                 headers: {
                     "App-Token": GLPIAPPTOKEN,
-                    "Session-Token": SessionToken,
+                    "Session-Token": GLPISESSIONTOKEN,
                     "Content-Type": "application/json",
                 },
                 params: {
@@ -127,41 +130,59 @@ export default class GlpiUserDataService {
             userResponse.statusCode !== 200 ||
             (userResponse.content && JSON.parse(userResponse.content)["ERROR"])
         ) {
-            logger.error("GlpiUserData.ts - Error 01: " + userResponse.content);
+            logger.error(
+                "GlpiUserData.ts - getUser() - Error 01: " +
+                    userResponse.content
+            );
             return undefined;
         }
 
         if (!userResponse || !userResponse.content) {
-            logger.error("GlpiUserData.ts - Error 02: NO return from GLPI");
+            logger.error(
+                "GlpiUserData.ts - getUser() - Error 02: NO return from GLPI"
+            );
             return undefined;
         }
 
         const FULLUSER = JSON.parse(userResponse.content);
-        const ENTITYNAME = FULLUSER.data[0][77];
-        /*
-        if (logger) {
-            logger.debug(
-                "GlpiUserData.ts - Debug 03 - " +
-                    JSON.stringify(FULLUSER) +
-                    " - " +
-                    ENTITYNAME
-            );
+
+        GlpiKillSessionService.GlpiKillSession(
+            http,
+            read,
+            logger,
+            GLPISESSIONTOKEN
+        );
+
+        return FULLUSER;
+    }
+
+    private static async getEntity(
+        http: IHttp,
+        read: IRead,
+        logger: ILogger,
+        entityName: string
+    ): Promise<any> {
+        const { GLPIURL, GLPIAPPTOKEN, GLPIUSERTOKEN, GLPISESSIONTOKEN } =
+            await this.getEnv(http, read, logger);
+
+        if (!GLPIURL || !GLPIAPPTOKEN || !GLPIUSERTOKEN || !GLPISESSIONTOKEN) {
+            return undefined;
         }
-        */
+
         const entityResponse = await http.get(
             GLPIURL + "/apirest.php/search/Entity",
             {
                 timeout: apiTimeout,
                 headers: {
                     "App-Token": GLPIAPPTOKEN,
-                    "Session-Token": SessionToken,
+                    "Session-Token": GLPISESSIONTOKEN,
                     "Content-Type": "application/json",
                 },
                 params: {
                     // nome da entidade - 14
                     "criteria[14][field]": "14",
                     "criteria[14][searchtype]": "contains",
-                    "criteria[14][value]": ENTITYNAME,
+                    "criteria[14][value]": entityName,
                     // entityFullName - 1
                     "forcedisplay[1]": "1",
                     // entityID - 2
@@ -173,7 +194,6 @@ export default class GlpiUserDataService {
                 },
             }
         );
-
         if (
             !entityResponse ||
             !entityResponse.statusCode ||
@@ -182,17 +202,99 @@ export default class GlpiUserDataService {
                 JSON.parse(entityResponse.content)["ERROR"])
         ) {
             logger.error(
-                "GlpiUserData.ts - Error 03: " + entityResponse.content
+                "GlpiUserData.ts - getEntity() - Error 01: " +
+                    entityResponse.content
             );
             return undefined;
         }
-
         if (!entityResponse || !entityResponse.content) {
-            logger.error("GlpiUserData.ts - Error 04: NO return from GLPI");
+            logger.error(
+                "GlpiUserData.ts - getEntity() - Error 02: NO return from GLPI"
+            );
+            return undefined;
+        }
+        const FULLENTITY = JSON.parse(entityResponse.content);
+
+        GlpiKillSessionService.GlpiKillSession(
+            http,
+            read,
+            logger,
+            GLPISESSIONTOKEN
+        );
+
+        return FULLENTITY;
+    }
+
+    public static async searchUser(
+        http: IHttp,
+        read: IRead,
+        logger: ILogger,
+        userPhone: string,
+        userName: string
+    ): Promise<any> {
+        if (userPhone) {
+            // Remover 0 do início
+            if (userPhone.startsWith("0")) {
+                userPhone = userPhone.slice(1);
+            }
+            // Remover código do Brasil
+            if (userPhone.length > 11 && userPhone.startsWith("55")) {
+                userPhone = userPhone.slice(2);
+            }
+            // Extrair código de área
+            const phoneAreaCode = userPhone.slice(0, 2);
+            // remover código de área
+            userPhone = userPhone.slice(2);
+            // Verificar se o primeiro dígito é 7, 8 ou 9
+            const firstDigit = userPhone.charAt(0);
+            const isMobile = ["7", "8", "9"].includes(firstDigit);
+            if (isMobile && userPhone.length < 9) {
+                userPhone = "9" + userPhone;
+            }
+            userPhone = phoneAreaCode + userPhone;
+            /*
+            if (logger) {
+                logger.debug("GlpiUserData.ts - Debug 01 - " + userPhone);
+            }
+            */
+        }
+
+        if (userName) {
+            userName = userName.replace(/\.com(\.br)?$/, "");
+            /*
+            if (logger) {
+                logger.debug("GlpiUserData.ts - Debug 02 - " + userName);
+            }
+            */
+        }
+
+        let FULLUSER = await this.getUser(
+            http,
+            read,
+            logger,
+            userPhone,
+            userName
+        );
+
+        const { GLPIDEFAULTUSER } = await this.getEnv(http, read, logger);
+
+        if (!FULLUSER || FULLUSER.totalcount === 0) {
+            FULLUSER = await this.getUser(
+                http,
+                read,
+                logger,
+                userPhone,
+                GLPIDEFAULTUSER
+            );
+        }
+
+        if (!FULLUSER) {
             return undefined;
         }
 
-        const FULLENTITY = JSON.parse(entityResponse.content);
+        const ENTITYNAME = FULLUSER.data[0][77];
+
+        const FULLENTITY = await this.getEntity(http, read, logger, ENTITYNAME);
 
         const GLPIFULLUSER = {
             userID: FULLUSER.data[0][2],
@@ -209,13 +311,7 @@ export default class GlpiUserDataService {
                 entityCNPJ: FULLENTITY.data[0][70],
             },
         };
-        /*
-        if (logger) {
-            logger.debug(
-                "GlpiUserData.ts - Debug 05 - " + JSON.stringify(GLPIFULLUSER)
-            );
-        }
-        */
+
         return GLPIFULLUSER;
     }
 }

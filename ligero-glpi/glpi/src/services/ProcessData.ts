@@ -38,7 +38,7 @@ export default class ProcessDataService {
             logger.debug("ProcessData.ts - Debug 01");
         }
         */
-        if (eventType === "Transfer" && room) {
+        if ((eventType === "Transferred" || eventType === "Closed") && room) {
             if (!livechatRoom.visitor) {
                 return;
             }
@@ -73,6 +73,7 @@ export default class ProcessDataService {
                     ...data,
                     username:
                         livechatRoom.visitor.livechatData.username || undefined,
+                    tags: fullRoomInfo._unmappedProperties_?.tags || undefined,
                 };
             }
 

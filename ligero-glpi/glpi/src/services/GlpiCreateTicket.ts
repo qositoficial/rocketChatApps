@@ -12,13 +12,14 @@ import {
     getSettingValue,
 } from "../settings/settings";
 import { apiTimeout } from "../helpers/constants";
+import GlpiInitSessionService from "./GlpiInitSession";
+import GlpiKillSessionService from "./GlpiKillSession";
 
 export default class GlpiCreateTicketService {
     public static async createTicket(
         http: IHttp,
         read: IRead,
         logger: ILogger,
-        SessionToken: string,
         GlpiFullUser: any,
         departmentName: string
     ) {
@@ -36,6 +37,9 @@ export default class GlpiCreateTicketService {
             read.getEnvironmentReader(),
             CONFIG_GLPI_USER_TOKEN
         );
+
+        const GLPISESSIONTOKEN: string =
+            await GlpiInitSessionService.GlpiInitSession(http, read, logger);
 
         const GLPISUBJECTDEFAULT: string = await getSettingValue(
             read.getEnvironmentReader(),
@@ -59,7 +63,7 @@ export default class GlpiCreateTicketService {
                 timeout: apiTimeout,
                 headers: {
                     "App-Token": GLPIAPPTOKEN,
-                    "Session-Token": SessionToken,
+                    "Session-Token": GLPISESSIONTOKEN,
                     "Content-Type": "application/json",
                 },
                 data: {
@@ -104,6 +108,13 @@ export default class GlpiCreateTicketService {
             );
         }
         */
+        GlpiKillSessionService.GlpiKillSession(
+            http,
+            read,
+            logger,
+            GLPISESSIONTOKEN
+        );
+
         return ticketNumber;
     }
 }

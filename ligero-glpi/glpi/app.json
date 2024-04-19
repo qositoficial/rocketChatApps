@@ -13,6 +13,7 @@
     "classFile": "GlpiApp.ts",
     "description": "GLPI integration with Rocket.Chat",
     "implements": [
-        "IPostLivechatRoomTransferred"
+        "IPostLivechatRoomTransferred",
+        "IPostLivechatRoomClosed"
     ]
 }

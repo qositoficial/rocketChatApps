@@ -10,37 +10,28 @@ import {
 } from "@rocket.chat/apps-engine/definition/accessors";
 import { App } from "@rocket.chat/apps-engine/definition/App";
 import {
-    ILivechatMessage,
     ILivechatRoom,
     ILivechatTransferEventContext,
     IPostLivechatRoomClosed,
     IPostLivechatRoomTransferred,
 } from "@rocket.chat/apps-engine/definition/livechat";
-import {
-    IMessage,
-    IPostMessageSent,
-} from "@rocket.chat/apps-engine/definition/messages";
 import { IAppInfo } from "@rocket.chat/apps-engine/definition/metadata";
-import { IRoom, RoomType } from "@rocket.chat/apps-engine/definition/rooms";
 import { IUser } from "@rocket.chat/apps-engine/definition/users";
 
 import {
-    CONFIG_GLPI_API_URL,
-    CONFIG_GLPI_APP_TOKEN,
     CONFIG_GLPI_DEPARTMENTS,
-    CONFIG_GLPI_USER_TOKEN,
     CONFIG_GLPI_NEW_TICKET_MESSAGE,
     getSettingValue,
     SETTINGS,
 } from "./src/settings/settings";
-import GlpiInitSessionService from "./src/services/GlpiInitSession";
-import GlpiKillSessionService from "./src/services/GlpiKillSession";
 import ProcessDataService from "./src/services/ProcessData";
 import GlpiUserDataService from "./src/services/GlpiUserData";
-import GlpiCreateTicket from "./src/services/GlpiCreateTicket";
 import GlpiCreateTicketService from "./src/services/GlpiCreateTicket";
 
-export class GlpiApp extends App implements IPostLivechatRoomTransferred {
+export class GlpiApp
+    extends App
+    implements IPostLivechatRoomTransferred, IPostLivechatRoomClosed
+{
     constructor(info: IAppInfo, logger: ILogger, acessors: IAppAccessors) {
         super(info, logger, acessors);
     }
@@ -124,7 +115,7 @@ export class GlpiApp extends App implements IPostLivechatRoomTransferred {
         const appUser = await read.getUserReader().getAppUser(this.getID());
 
         const dataUser = await ProcessDataService.ProcessData(
-            "Transfer",
+            "Transferred",
             http,
             read,
             persistence,
@@ -137,47 +128,51 @@ export class GlpiApp extends App implements IPostLivechatRoomTransferred {
             return;
         }
 
-        if (!firstMessage) {
-            this.getLogger().debug("DEBUG: Not firstMessage");
-            return;
-        }
+        // if (!firstMessage) {
+        //     this.getLogger().debug("DEBUG: Not firstMessage");
+        //     return;
+        // }
 
         if (context.to.name) {
             if (DEPARTMENTS.includes(context.to.name)) {
                 /*
                 this.getLogger().debug(
-                    `Debug 01 - ${JSON.stringify(context.to.name)}`
+                    `Debug 01 - ${JSON.stringify(dataUser)}`
                 );
                 */
-                const GLPI_SESSION_TOKEN =
-                    await GlpiInitSessionService.GlpiInitSession(
-                        http,
-                        read,
-                        this.getLogger()
-                    );
 
                 const GLPI_FULL_USER = await GlpiUserDataService.searchUser(
                     http,
                     read,
                     this.getLogger(),
-                    GLPI_SESSION_TOKEN,
                     dataUser.userPhone,
                     dataUser.username
                 );
 
-                const GLPI_CREATE_TICKET =
+                const GLPI_NEW_TICKET =
                     (await GlpiCreateTicketService.createTicket(
                         http,
                         read,
                         this.getLogger(),
-                        GLPI_SESSION_TOKEN,
                         GLPI_FULL_USER,
                         context.to.name
                     )) || "";
 
-                if (!GLPI_CREATE_TICKET) {
+                if (!GLPI_NEW_TICKET) {
                     return;
                 }
+
+                // const dataUser = await ProcessDataService.ProcessData(
+                //     "Transferred",
+                //     http,
+                //     read,
+                //     persistence,
+                //     context.room as ILivechatRoom,
+                //     this.getLogger(),
+                //     GLPI_NEW_TICKET
+                // );
+
+                this.getLogger().debug(`DEBUG: ${JSON.stringify(dataUser)} `);
 
                 let newTicketMessage = await getSettingValue(
                     read.getEnvironmentReader(),
@@ -187,7 +182,7 @@ export class GlpiApp extends App implements IPostLivechatRoomTransferred {
                 if (CONFIG_GLPI_NEW_TICKET_MESSAGE) {
                     newTicketMessage =
                         "*[Mensagem Automática]*\n" +
-                        newTicketMessage.replace("%s", GLPI_CREATE_TICKET);
+                        newTicketMessage.replace("%s", GLPI_NEW_TICKET);
                     const ticketMessage = modify
                         .getCreator()
                         .startLivechatMessage();
@@ -200,4 +195,63 @@ export class GlpiApp extends App implements IPostLivechatRoomTransferred {
             }
         }
     }
+
+    public async executePostLivechatRoomClosed(
+        room: ILivechatRoom,
+        read: IRead,
+        http: IHttp,
+        persistence: IPersistence
+    ): Promise<void> {
+        const dataUser = await ProcessDataService.ProcessData(
+            "Transferred",
+            http,
+            read,
+            persistence,
+            room as ILivechatRoom,
+            this.getLogger()
+        );
+
+        this.getLogger().debug("DEBUG - CLOSE: " + JSON.stringify(dataUser));
+    }
+
+    // public async executePostLivechatRoomClosed(
+    //     room: ILivechatRoom,
+    //     read: IRead,
+    //     http: IHttp,
+    //     persistence: IPersistence
+    //     // modify?: IModify
+    // ): Promise<void> {
+    //     // // this.getLogger().debug('c: 1');
+    //     // const data = await LigeroSmart.ProcessData(
+    //     //     "LivechatSession",
+    //     //     read,
+    //     //     persistence,
+    //     //     room,
+    //     //     undefined,
+    //     //     this.getLogger()
+    //     // );
+    //     // // this.getLogger().debug('c: 2');
+    //     // if (!data) {
+    //     //     return;
+    //     // }
+    //     // this.getLogger().debug('c: 3');
+    //     const TicketID = await LigeroSmart.TicketCreateOrClose(
+    //         http,
+    //         read,
+    //         this.getLogger(),
+    //         data
+    //     );
+    //     // this.getLogger().debug('c: 4');
+    //     return;
+    // }
+
+    // protected async extendConfiguration(
+    //     configuration: IConfigurationExtend
+    // ): Promise<void> {
+    //     await Promise.all(
+    //         settings.map((setting) =>
+    //             configuration.settings.provideSetting(setting)
+    //         )
+    //     );
+    // }
 }

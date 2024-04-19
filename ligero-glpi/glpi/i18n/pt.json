@@ -11,6 +11,8 @@
     "config_glpi_subject_default_description": "Assunto padrão para o ticket gerado pelo Rocket.Chat",
     "config_glpi_request_origin_id_label": "Origem da requisição",
     "config_glpi_request_origin_id_description": "Crie uma origem no GLPI, por exemplo Chat, e utilize o ID dela aqui",
+    "config_glpi_default_user_label": "Usuário padrão GLPI",
+    "config_glpi_default_user_description": "Caso o Rocket.Chat não encontre o cadastro do contato no GLPI, este usuário será utilizado na criação do ticket",
     "config_glpi_new_ticket_message_label": "Mensagem ao criar ticket",
     "config_glpi_new_ticket_message_description": "Mensagem personalizada que o GLPI irá responder ao usuário após a criação do ticket"
 }
