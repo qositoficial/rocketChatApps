@@ -36,7 +36,6 @@ export class GlpiApp
         super(info, logger, acessors);
     }
 
-    // configuração que vem da interface
     public async extendConfiguration(
         configuration: IConfigurationExtend,
         environmentRead: IEnvironmentRead
@@ -93,13 +92,14 @@ export class GlpiApp
         persistence: IPersistence,
         modify: IModify
     ): Promise<void> {
+        // Departamento(s) definido(s) na configuração
         const DEPARTMENTS = await getSettingValue(
             read.getEnvironmentReader(),
             CONFIG_GLPI_DEPARTMENTS
         );
-
+        // Variável pra controle de mensagens
         let firstMessage = 0;
-
+        // Adicionar campo customizado para controle de mensagens
         if (
             !context.room.customFields ||
             !context.room.customFields.GlpiFirstMessage
@@ -111,9 +111,9 @@ export class GlpiApp
             await modify.getExtender().finish(roomUp);
             firstMessage = 1;
         }
-
+        // Define usuário criado pelo App
         const appUser = await read.getUserReader().getAppUser(this.getID());
-
+        // Processa a mensagem para definir dados de usuário
         const dataUser = await ProcessDataService.ProcessData(
             "Transferred",
             http,
@@ -122,25 +122,18 @@ export class GlpiApp
             context.room as ILivechatRoom,
             this.getLogger()
         );
-
+        // Encerra caso não tenha dados do usuário
         if (!dataUser) {
-            this.getLogger().debug("DEBUG: Not dataUser");
             return;
         }
-
-        // if (!firstMessage) {
-        //     this.getLogger().debug("DEBUG: Not firstMessage");
-        //     return;
-        // }
-
+        // Encerra caso não seja a primeira mensagem
+        if (!firstMessage) {
+            return;
+        }
+        // Criar o ticket no GLPI
         if (context.to.name) {
             if (DEPARTMENTS.includes(context.to.name)) {
-                /*
-                this.getLogger().debug(
-                    `Debug 01 - ${JSON.stringify(dataUser)}`
-                );
-                */
-
+                // Consultar usuário
                 const GLPI_FULL_USER = await GlpiUserDataService.searchUser(
                     http,
                     read,
@@ -148,7 +141,7 @@ export class GlpiApp
                     dataUser.userPhone,
                     dataUser.username
                 );
-
+                // Criar o ticker no GLPI
                 const GLPI_NEW_TICKET =
                     (await GlpiCreateTicketService.createTicket(
                         http,
@@ -157,23 +150,11 @@ export class GlpiApp
                         GLPI_FULL_USER,
                         context.to.name
                     )) || "";
-
+                // Encerra caso não tenha criado o ticket
                 if (!GLPI_NEW_TICKET) {
                     return;
                 }
-
-                // const dataUser = await ProcessDataService.ProcessData(
-                //     "Transferred",
-                //     http,
-                //     read,
-                //     persistence,
-                //     context.room as ILivechatRoom,
-                //     this.getLogger(),
-                //     GLPI_NEW_TICKET
-                // );
-
-                this.getLogger().debug(`DEBUG: ${JSON.stringify(dataUser)} `);
-
+                // Retorna mensagem para o cliente com o ticket criado
                 let newTicketMessage = await getSettingValue(
                     read.getEnvironmentReader(),
                     CONFIG_GLPI_NEW_TICKET_MESSAGE
