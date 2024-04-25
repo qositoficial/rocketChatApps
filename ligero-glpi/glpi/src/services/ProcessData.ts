@@ -98,105 +98,228 @@ export default class ProcessDataService {
             livechatRoom.id
         );
 
-        let messageAsObject = {};
-        let userEmail: string;
-        let userPhone: string;
+        if (eventType === "Message" && message) {
+            if (!livechatRoom.visitor) {
+                // encerra se não identificar visitante
+                return;
+            }
 
-        messageAsObject["_id"] = message.id;
-        messageAsObject["messageText"] = message.text;
-        messageAsObject["updatedAt"] = message.updatedAt;
+            let messageAsObject = {};
+            let userEmail: string;
+            let userName: string;
+            let userPhone: string;
 
+            // identificação da mensagem
+            messageAsObject["_id"] = message.id;
+            messageAsObject["messageText"] = message.text;
+            messageAsObject["updatedAt"] = message.updatedAt;
+
+            // atribuição do email do visitante
+            if (
+                message.sender.emails &&
+                message.sender.emails[0] &&
+                message.sender.emails[0].address
+            ) {
+                userEmail = message.sender.emails[0].address;
+            } else {
+                userEmail = "";
+            }
+            // atribuição do username do visitante
+            if (
+                room.visitor.livechatData &&
+                room.visitor.livechatData.username
+            ) {
+                userName = room.visitor.livechatData.username;
+            } else {
+                userName = "";
+            }
+            // atribuição do telefone do visitante
+            if (
+                livechatRoom.visitor.phone &&
+                livechatRoom.visitor.phone[0] &&
+                livechatRoom.visitor.phone[0].phoneNumber
+            ) {
+                userPhone = livechatRoom.visitor.phone[0].phoneNumber;
+            } else {
+                userPhone = "";
+            }
+
+            // armazenar dados do visitante
+            messageAsObject["visitor"] = {
+                _id: message.sender.id,
+                username: userName,
+                name: message.sender.name,
+                email: userEmail,
+                phone: userPhone,
+                userType: message.sender.type,
+            };
+
+            // se a mensagem for automática, atribuir os dados à um agente
+            if (
+                message.sender.type === UserType.USER ||
+                message.sender.type === UserType.BOT ||
+                message.sender.type === UserType.APP
+            ) {
+                messageAsObject["agent"] = {
+                    _id: message.sender.id,
+                    username: userName,
+                    name: message.sender.name,
+                    userType: message.sender.type,
+                };
+            }
+
+            // Tratar mensagens com anexos
+            if (message.attachments) {
+                const serverUrl = await read
+                    .getEnvironmentReader()
+                    .getServerSettings()
+                    .getValueById("Site_Url");
+                let fileType = "application/octet-stream";
+
+                let attachUrl =
+                    message.attachments[0].imageUrl ||
+                    message.attachments[0].audioUrl ||
+                    message.attachments[0].videoUrl ||
+                    message.attachments[0]!.title!.link!;
+
+                if (attachUrl.indexOf("http") != 0) {
+                    attachUrl = `${serverUrl + attachUrl}`;
+                }
+                messageAsObject["file"] = {
+                    type: message.file?.type,
+                    name: message.attachments[0].title?.value,
+                };
+
+                messageAsObject["fileUpload"] = {
+                    publicFilePath: attachUrl,
+                };
+            }
+
+            // carregar mensagens da sala
+            roomMessages = await read
+                .getPersistenceReader()
+                .readByAssociation(roomPersisAss);
+
+            // inclui nova mensagem na sala
+            let newMessage = {};
+            if (
+                !roomMessages ||
+                !roomMessages[0] ||
+                !roomMessages[0]["messages"]
+            ) {
+                newMessage = {
+                    messages: [messageAsObject],
+                };
+            } else {
+                const rMsg = roomMessages[0]["messages"];
+                newMessage = {
+                    messages: [...rMsg, messageAsObject],
+                };
+            }
+
+            const roomPersis = persistence.updateByAssociation(
+                roomPersisAss,
+                newMessage,
+                true
+            );
+        }
+
+        // recupera mensagens
+        let roomMessagesArray: Array<any> = [];
+        roomMessages = await read
+            .getPersistenceReader()
+            .readByAssociation(roomPersisAss);
+
+        if (roomMessages && roomMessages[0] && roomMessages[0]["messages"]) {
+            roomMessagesArray = roomMessages[0]["messages"];
+        }
+
+        // prepara objeto data
+        data = {
+            _id: livechatRoom.id,
+            type: eventType,
+            messages: roomMessagesArray,
+            tags: fullRoomInfo._unmappedProperties_?.tags || undefined,
+        };
+
+        // Definições de agente
+        const servedBy = livechatRoom.servedBy;
+        logger.debug("Debug - " + JSON.stringify(livechatRoom.servedBy));
+        logger.debug(
+            "Debug - " + JSON.stringify(fullRoomInfo._unmappedProperties_?.tags)
+        );
+
+        let mailAddress = "";
         if (
-            message.sender.emails &&
-            message.sender.emails[0] &&
-            message.sender.emails[0].address
+            servedBy &&
+            servedBy.emails &&
+            servedBy.emails[0] &&
+            servedBy.emails[0].address
         ) {
-            userEmail = message.sender.emails[0].address;
-        } else {
-            userEmail = "";
+            mailAddress = servedBy.emails[0].address || "";
         }
 
-        if (
-            livechatRoom.visitor.phone &&
-            livechatRoom.visitor.phone[0] &&
-            livechatRoom.visitor.phone[0].phoneNumber
-        ) {
-            userPhone = livechatRoom.visitor.phone[0].phoneNumber;
-        } else {
-            userPhone = "";
+        if (servedBy) {
+            data = {
+                ...data,
+                agent: {
+                    _id: servedBy.id || "",
+                    name: servedBy.name || "",
+                    username: servedBy.username || "",
+                    email: mailAddress,
+                    UserType: servedBy.type || "",
+                },
+            };
         }
-        /*
-        if (logger) {
-            logger.debug("ProcessData.ts - Debug 01");
+
+        // definições de visitante
+        const liveVisitor = livechatRoom.visitor;
+
+        if (!liveVisitor) {
+            return;
         }
-        */
-        messageAsObject["fullUserData"] = {
-            _id: message.sender.id,
-            username: message.sender.username,
-            name: message.sender.name,
-            email: userEmail,
-            phone: userPhone,
-            userType: message.sender.type,
+
+        data = {
+            ...data,
+            visitor: liveVisitor || {},
+            departmentName: livechatRoom.department?.name,
         };
 
         if (
-            message.sender.type === UserType.USER ||
-            message.sender.type === UserType.BOT ||
-            message.sender.type === UserType.APP
+            data.visitor &&
+            data.visitor.visitorEmails &&
+            data.visitor.visitorEmails[0] &&
+            data.visitor.visitorEmails[0].address
         ) {
-            messageAsObject["fullAgentData"] = {
-                _id: message.sender.id,
-                username: message.sender.username,
-                name: message.sender.name,
-                userType: message.sender.type,
+            data.visitor = {
+                ...data.visitor,
+                email: data.visitor.visitorEmails[0].address,
             };
         }
 
-        return JSON.stringify(messageAsObject);
-
-        if ((eventType === "Transferred" || eventType === "Closed") && room) {
-            return;
-            /*
-            if (!livechatRoom.visitor) {
-                return;
-            }
-            // data.visitor.phone = livechatRoom.visitor.phone;
-            // if (livechatRoom.visitor.customFields) {
-            //     data.visitor.username =
-            //         livechatRoom.visitor.customFields.username;
-            // } else {
-            //     data.visitor.username = undefined;
-            // }
-            data = {
-                _id: livechatRoom.id,
-                type: eventType,
+        if (
+            data.visitor &&
+            data.visitor.livechat &&
+            data.visitor.livechat.username
+        ) {
+            data.visitor = {
+                ...data.visitor,
+                username: data.visitor.livechatData.username,
             };
-
-            if (
-                livechatRoom.visitor.phone &&
-                livechatRoom.visitor.phone[0].phoneNumber
-            ) {
-                data = {
-                    ...data,
-                    userPhone:
-                        livechatRoom.visitor.phone[0].phoneNumber || undefined,
-                };
-            }
-
-            if (
-                livechatRoom.visitor.livechatData &&
-                livechatRoom.visitor.livechatData.username
-            ) {
-                data = {
-                    ...data,
-                    username:
-                        livechatRoom.visitor.livechatData.username || undefined,
-                    tags: fullRoomInfo._unmappedProperties_?.tags || undefined,
-                };
-            }
-
-            return data;
-            */
         }
+
+        if (
+            data.visitor &&
+            data.visitor.phone &&
+            data.visitor.phone[0] &&
+            data.visitor.phone[0].phoneNumber
+        ) {
+            data.visitor = {
+                ...data.visitor,
+                phone: data.visitor.phone[0].phoneNumber,
+            };
+        }
+
+        return data;
     }
 }
