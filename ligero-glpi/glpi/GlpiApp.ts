@@ -10,8 +10,10 @@ import {
 } from "@rocket.chat/apps-engine/definition/accessors";
 import { App } from "@rocket.chat/apps-engine/definition/App";
 import {
+    ILivechatEventContext,
     ILivechatRoom,
     ILivechatTransferEventContext,
+    IPostLivechatAgentAssigned,
     IPostLivechatRoomClosed,
     IPostLivechatRoomTransferred,
 } from "@rocket.chat/apps-engine/definition/livechat";
@@ -27,10 +29,15 @@ import {
 import ProcessDataService from "./src/services/ProcessData";
 import GlpiUserDataService from "./src/services/GlpiUserData";
 import GlpiCreateTicketService from "./src/services/GlpiCreateTicket";
+import GlpiTicketAssignedService from "./src/services/GlpiTicketAssigned";
+import { IMessage } from "@rocket.chat/apps-engine/definition/messages";
 
 export class GlpiApp
     extends App
-    implements IPostLivechatRoomTransferred, IPostLivechatRoomClosed
+    implements
+        IPostLivechatRoomTransferred,
+        IPostLivechatRoomClosed,
+        IPostLivechatAgentAssigned
 {
     constructor(info: IAppInfo, logger: ILogger, acessors: IAppAccessors) {
         super(info, logger, acessors);
@@ -114,16 +121,16 @@ export class GlpiApp
         // Define usuário criado pelo App
         const appUser = await read.getUserReader().getAppUser(this.getID());
         // Processa a mensagem para definir dados de usuário
-        const dataUser = await ProcessDataService.ProcessData(
-            "Transferred",
-            http,
-            read,
-            persistence,
+
+        let message: any = {};
+
+        const visitor = await ProcessDataService.GetUser(
+            "visitor",
             context.room as ILivechatRoom,
             this.getLogger()
         );
         // Encerra caso não tenha dados do usuário
-        if (!dataUser) {
+        if (!visitor) {
             return;
         }
         // Encerra caso não seja a primeira mensagem
@@ -134,12 +141,18 @@ export class GlpiApp
         if (context.to.name) {
             if (DEPARTMENTS.includes(context.to.name)) {
                 // Consultar usuário
+                this.getLogger().debug(
+                    `Debug 00001 - ${JSON.stringify(visitor)}`
+                );
                 const GLPI_FULL_USER = await GlpiUserDataService.searchUser(
                     http,
                     read,
                     this.getLogger(),
-                    dataUser.userPhone,
-                    dataUser.username
+                    visitor.fullUserData.phone,
+                    visitor.fullUserData.email
+                );
+                this.getLogger().debug(
+                    `Debug 00002 - ${JSON.stringify(GLPI_FULL_USER)}`
                 );
                 // Criar o ticker no GLPI
                 const GLPI_NEW_TICKET =
@@ -177,22 +190,40 @@ export class GlpiApp
         }
     }
 
+    public async executePostLivechatAgentAssigned(
+        context: ILivechatEventContext,
+        read: IRead,
+        http: IHttp,
+        persis: IPersistence,
+        modify: IModify
+    ): Promise<void> {
+        await GlpiTicketAssignedService.executePost(
+            context,
+            http,
+            read,
+            modify,
+            this.getLogger()
+        );
+    }
+
     public async executePostLivechatRoomClosed(
         room: ILivechatRoom,
         read: IRead,
         http: IHttp,
         persistence: IPersistence
     ): Promise<void> {
-        const dataUser = await ProcessDataService.ProcessData(
+        let message: any = {};
+        const visitor = await ProcessDataService.ProcessData(
             "Transferred",
             http,
             read,
             persistence,
             room as ILivechatRoom,
+            message,
             this.getLogger()
         );
 
-        this.getLogger().debug("DEBUG - CLOSE: " + JSON.stringify(dataUser));
+        this.getLogger().debug("DEBUG - CLOSE: " + JSON.stringify(visitor));
     }
 
     // public async executePostLivechatRoomClosed(

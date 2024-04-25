@@ -67,6 +67,9 @@ export default class GlpiUserDataService {
         userPhone: string,
         userName: string
     ): Promise<any> {
+        if (logger) {
+            logger.debug(`AQUI: ${userPhone} e ${userName}`);
+        }
         const { GLPIURL, GLPIAPPTOKEN, GLPIUSERTOKEN, GLPISESSIONTOKEN } =
             await this.getEnv(http, read, logger);
 

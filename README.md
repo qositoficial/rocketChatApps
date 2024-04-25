@@ -1,5 +1,5 @@
-# customerAlerts
-This app notifies the customer when events occur in the chat (Transfer, Pick up, etc.)
+# Typebot
+Typebot integration with Rocket.Chat
 
 ## Getting Started
 Now that you have generated a blank default Rocket.Chat App, what are you supposed to do next?
