@@ -64,12 +64,10 @@ export default class GlpiUserDataService {
         http: IHttp,
         read: IRead,
         logger: ILogger,
-        userPhone: string,
-        userName: string
+        userEmail: string,
+        userName: string,
+        userPhone: string
     ): Promise<any> {
-        if (logger) {
-            logger.debug(`AQUI: ${userPhone} e ${userName}`);
-        }
         const { GLPIURL, GLPIAPPTOKEN, GLPIUSERTOKEN, GLPISESSIONTOKEN } =
             await this.getEnv(http, read, logger);
 
@@ -96,7 +94,7 @@ export default class GlpiUserDataService {
                     "criteria[5][link]": "OR",
                     "criteria[5][field]": "5",
                     "criteria[5][searchtype]": "contains",
-                    "criteria[5][value]": userName,
+                    "criteria[5][value]": userEmail,
                     // telefone - 6
                     "criteria[6][link]": "OR",
                     "criteria[6][field]": "6",
@@ -232,8 +230,9 @@ export default class GlpiUserDataService {
         http: IHttp,
         read: IRead,
         logger: ILogger,
-        userPhone: string,
-        userName: string
+        userEmail: string,
+        userName: string,
+        userPhone: string
     ): Promise<any> {
         if (userPhone) {
             // Remover 0 do início
@@ -275,8 +274,9 @@ export default class GlpiUserDataService {
             http,
             read,
             logger,
-            userPhone,
-            userName
+            userEmail,
+            userName,
+            userPhone
         );
 
         const { GLPIDEFAULTUSER } = await this.getEnv(http, read, logger);
@@ -286,8 +286,9 @@ export default class GlpiUserDataService {
                 http,
                 read,
                 logger,
-                userPhone,
-                GLPIDEFAULTUSER
+                GLPIDEFAULTUSER,
+                GLPIDEFAULTUSER,
+                userPhone
             );
         }
 

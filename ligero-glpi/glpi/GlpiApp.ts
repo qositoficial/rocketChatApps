@@ -148,8 +148,9 @@ export class GlpiApp
                     http,
                     read,
                     this.getLogger(),
-                    visitor.fullUserData.phone,
-                    visitor.fullUserData.email
+                    visitor.fullUserData.email,
+                    visitor.fullUserData.username,
+                    visitor.fullUserData.phone
                 );
                 this.getLogger().debug(
                     `Debug 00002 - ${JSON.stringify(GLPI_FULL_USER)}`
