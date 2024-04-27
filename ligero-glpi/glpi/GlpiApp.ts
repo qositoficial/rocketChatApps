@@ -11,6 +11,7 @@ import {
 import { App } from "@rocket.chat/apps-engine/definition/App";
 import {
     ILivechatEventContext,
+    ILivechatMessage,
     ILivechatRoom,
     ILivechatTransferEventContext,
     IPostLivechatAgentAssigned,
@@ -30,11 +31,16 @@ import ProcessDataService from "./src/services/ProcessData";
 import GlpiUserDataService from "./src/services/GlpiUserData";
 import GlpiCreateTicketService from "./src/services/GlpiCreateTicket";
 import GlpiTicketAssignedService from "./src/services/GlpiTicketAssigned";
-import { IMessage } from "@rocket.chat/apps-engine/definition/messages";
+import {
+    IMessage,
+    IPostMessageSent,
+} from "@rocket.chat/apps-engine/definition/messages";
+import { RoomType } from "@rocket.chat/apps-engine/definition/rooms";
 
 export class GlpiApp
     extends App
     implements
+        IPostMessageSent,
         IPostLivechatRoomTransferred,
         IPostLivechatRoomClosed,
         IPostLivechatAgentAssigned
@@ -52,7 +58,6 @@ export class GlpiApp
         );
     }
 
-    /*
     public async executePostMessageSent(
         message: IMessage,
         read: IRead,
@@ -70,27 +75,21 @@ export class GlpiApp
             return;
         }
 
-        // Debug
-        if (message.room.displayName === "Diego RA") {
-            this.getLogger().debug(
-                `Sent - Debug 01 - ${message.room.displayName}`
-            );
+        // processa as mensagens
+        const data = await ProcessDataService.ProcessData(
+            "Message",
+            read,
+            persistence,
+            message.room as ILivechatRoom,
+            message,
+            this.getLogger()
+        );
+
+        // retorna se não tiver dados
+        if (!data) {
+            return;
         }
-
-        // const appUser = await read.getUserReader().getAppUser(this.getID());
-
-        // if (
-        //     !message.room.customFields ||
-        //     !message.room.customFields.GlpiFirstMessage
-        // ) {
-        //     const roomUp = await modify
-        //         .getExtender()
-        //         .extendRoom(message.room.id, {} as IUser);
-        //     roomUp.addCustomField("GlpiFirstMessage", "1");
-        //     await modify.getExtender().finish(roomUp);
-        // }
     }
-    */
 
     public async executePostLivechatRoomTransferred(
         context: ILivechatTransferEventContext,
@@ -120,15 +119,14 @@ export class GlpiApp
         }
         // Define usuário criado pelo App
         const appUser = await read.getUserReader().getAppUser(this.getID());
+
         // Processa a mensagem para definir dados de usuário
-
-        let message: any = {};
-
         const visitor = await ProcessDataService.GetUser(
             "visitor",
             context.room as ILivechatRoom,
             this.getLogger()
         );
+
         // Encerra caso não tenha dados do usuário
         if (!visitor) {
             return;
@@ -168,6 +166,22 @@ export class GlpiApp
                 if (!GLPI_NEW_TICKET) {
                     return;
                 }
+
+                // TODO processa a mensagem com o número do ticket
+
+                // context.room["tags"] = `#${GLPI_NEW_TICKET}`;
+
+                // this.getLogger().debug(`DBUG: ${context.room}`);
+
+                // const data = await ProcessDataService.ProcessData(
+                //     "Message",
+                //     read,
+                //     persistence,
+                //     context.room as ILivechatRoom,
+                //     this.getLogger(),
+                //     GLPI_NEW_TICKET
+                // );
+
                 // Retorna mensagem para o cliente com o ticket criado
                 let newTicketMessage = await getSettingValue(
                     read.getEnvironmentReader(),
@@ -216,7 +230,6 @@ export class GlpiApp
         let message: any = {};
         const visitor = await ProcessDataService.ProcessData(
             "Transferred",
-            http,
             read,
             persistence,
             room as ILivechatRoom,

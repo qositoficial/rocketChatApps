@@ -78,14 +78,36 @@ export default class ProcessDataService {
             return usersAsObject;
         }
     }
+
+    public async setTicketNumber(
+        room: ILivechatRoom,
+        read: IRead,
+        logger: ILogger,
+        ticketNumber: string
+    ) {
+        let data: any = undefined;
+        const livechatRoom = room as ILivechatRoom;
+        let roomMessages: any;
+
+        const roomPersisAss = new RocketChatAssociationRecord(
+            RocketChatAssociationModel.ROOM,
+            livechatRoom.id
+        );
+
+        let roomMessagesArray: Array<any> = [];
+        roomMessages = await read
+            .getPersistenceReader()
+            .readByAssociation(roomPersisAss);
+    }
+
     public static async ProcessData(
         eventType: string,
-        http: IHttp,
         read: IRead,
         persistence: IPersistence,
         room: ILivechatRoom,
         message: ILivechatMessage,
-        logger: ILogger
+        logger: ILogger,
+        ticketNumber?: string
     ): Promise<any> {
         let data: any = undefined;
         let roomMessages: any;
@@ -244,10 +266,6 @@ export default class ProcessDataService {
 
         // Definições de agente
         const servedBy = livechatRoom.servedBy;
-        logger.debug("Debug - " + JSON.stringify(livechatRoom.servedBy));
-        logger.debug(
-            "Debug - " + JSON.stringify(fullRoomInfo._unmappedProperties_?.tags)
-        );
 
         let mailAddress = "";
         if (
