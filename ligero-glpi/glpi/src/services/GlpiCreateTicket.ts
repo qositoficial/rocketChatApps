@@ -11,18 +11,33 @@ import {
     CONFIG_GLPI_USER_TOKEN,
     getSettingValue,
 } from "../settings/settings";
-import { apiTimeout } from "../helpers/constants";
 import GlpiInitSessionService from "./GlpiInitSession";
 import GlpiKillSessionService from "./GlpiKillSession";
+import { timeout } from "../models/Constants";
+import {
+    RocketChatAssociationModel,
+    RocketChatAssociationRecord,
+} from "@rocket.chat/apps-engine/definition/metadata";
+import { IRoom } from "@rocket.chat/apps-engine/definition/rooms";
+import { ILivechatRoom } from "@rocket.chat/apps-engine/definition/livechat";
 
 export default class GlpiCreateTicketService {
     public static async createTicket(
+        room: IRoom,
         http: IHttp,
         read: IRead,
         logger: ILogger,
         GlpiFullUser: any,
         departmentName: string
     ) {
+        let data: any = undefined;
+        let roomMessages: any;
+        const livechatRoom = room as ILivechatRoom;
+        const roomPersisAss = new RocketChatAssociationRecord(
+            RocketChatAssociationModel.ROOM,
+            livechatRoom.id
+        );
+
         const GLPIURL: string = await getSettingValue(
             read.getEnvironmentReader(),
             CONFIG_GLPI_API_URL
@@ -60,7 +75,7 @@ export default class GlpiCreateTicketService {
         const ticketResponse = await http.post(
             GLPIURL + "/apirest.php/Ticket",
             {
-                timeout: apiTimeout,
+                timeout: timeout,
                 headers: {
                     "App-Token": GLPIAPPTOKEN,
                     "Session-Token": GLPISESSIONTOKEN,
@@ -108,6 +123,16 @@ export default class GlpiCreateTicketService {
             );
         }
         */
+
+        roomMessages = await read
+            .getPersistenceReader()
+            .readByAssociation(roomPersisAss);
+
+        data = {
+            _id: livechatRoom.id,
+            tags: `#${ticketNumber}`,
+        };
+
         GlpiKillSessionService.GlpiKillSession(
             http,
             read,

@@ -1,8 +1,0 @@
-{
-    "glpi_url_label": "GLPI Server URL",
-    "glpi_url_description": "Enter the URL in the format: https://serverAddress",
-    "glpi_app_token_label": "GLPI Application Token API",
-    "glpi_app_token_description": "Generate the token in -> Setup -> General -> API Clients",
-    "glpi_user_token_label": "GLPI User Token API",
-    "glpi_user_token_description": "Generate the token in -> Administration -> Users -> Select User ->  API token"
-}

@@ -9,7 +9,7 @@ import {
     CONFIG_GLPI_USER_TOKEN,
     getSettingValue,
 } from "../settings/settings";
-import { apiTimeout } from "../helpers/constants";
+import { timeout } from "../models/Constants";
 
 export default class GlpiInitSessionService {
     public static async GlpiInitSession(
@@ -45,7 +45,7 @@ export default class GlpiInitSessionService {
         */
 
         const response = await http.get(GLPIURL + "/apirest.php/initSession/", {
-            timeout: apiTimeout,
+            timeout: timeout,
             headers: {
                 "App-Token": GLPIAPPTOKEN,
                 Authorization: `user_token ${GLPIUSERTOKEN}`,

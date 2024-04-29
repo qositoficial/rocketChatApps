@@ -79,12 +79,13 @@ export default class ProcessDataService {
         }
     }
 
-    public async setTicketNumber(
+    public static async setTicketNumber(
         room: ILivechatRoom,
         read: IRead,
         logger: ILogger,
         ticketNumber: string
-    ) {
+    ): Promise<void> {
+        logger.debug("Aqui: " + JSON.stringify(room) + " " + ticketNumber);
         let data: any = undefined;
         const livechatRoom = room as ILivechatRoom;
         let roomMessages: any;
@@ -254,6 +255,12 @@ export default class ProcessDataService {
 
         if (roomMessages && roomMessages[0] && roomMessages[0]["messages"]) {
             roomMessagesArray = roomMessages[0]["messages"];
+        }
+
+        if (ticketNumber) {
+            fullRoomInfo._unmappedProperties_["tags"] = `#${ticketNumber}`;
+
+            logger.debug("Aqui, ticket: " + JSON.stringify(fullRoomInfo));
         }
 
         // prepara objeto data

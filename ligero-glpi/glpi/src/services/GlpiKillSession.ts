@@ -10,7 +10,8 @@ import {
     CONFIG_GLPI_USER_TOKEN,
     getSettingValue,
 } from "../settings/settings";
-import { apiTimeout } from "../helpers/constants";
+
+import { timeout } from "../models/Constants";
 
 export default class GlpiKillSessionService {
     public static async GlpiKillSession(
@@ -49,7 +50,7 @@ export default class GlpiKillSessionService {
         */
 
         const response = await http.get(GLPIURL + "/apirest.php/killSession/", {
-            timeout: apiTimeout,
+            timeout: timeout,
             headers: {
                 "App-Token": GLPIAPPTOKEN,
                 Authorization: `user_token ${GLPIUSERTOKEN}`,

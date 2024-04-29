@@ -35,7 +35,7 @@ import {
     IMessage,
     IPostMessageSent,
 } from "@rocket.chat/apps-engine/definition/messages";
-import { RoomType } from "@rocket.chat/apps-engine/definition/rooms";
+import { IRoom, RoomType } from "@rocket.chat/apps-engine/definition/rooms";
 
 export class GlpiApp
     extends App
@@ -89,6 +89,8 @@ export class GlpiApp
         if (!data) {
             return;
         }
+
+        this.getLogger().debug(`${JSON.stringify(data)}`);
     }
 
     public async executePostLivechatRoomTransferred(
@@ -156,6 +158,7 @@ export class GlpiApp
                 // Criar o ticker no GLPI
                 const GLPI_NEW_TICKET =
                     (await GlpiCreateTicketService.createTicket(
+                        context.room as IRoom,
                         http,
                         read,
                         this.getLogger(),
@@ -167,8 +170,21 @@ export class GlpiApp
                     return;
                 }
 
-                // TODO processa a mensagem com o número do ticket
+                let message: ILivechatMessage = {
+                    room: context.room,
+                    sender: context.to as IUser,
+                };
 
+                // TODO processa a mensagem com o número do ticket
+                const teste = await ProcessDataService.ProcessData(
+                    "Message",
+                    read,
+                    persistence,
+                    context.room as ILivechatRoom,
+                    message,
+                    this.getLogger(),
+                    GLPI_NEW_TICKET
+                );
                 // context.room["tags"] = `#${GLPI_NEW_TICKET}`;
 
                 // this.getLogger().debug(`DBUG: ${context.room}`);

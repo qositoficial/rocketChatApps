@@ -3,7 +3,7 @@ import {
     ILogger,
     IRead,
 } from "@rocket.chat/apps-engine/definition/accessors";
-import { apiTimeout } from "../helpers/constants";
+
 import {
     CONFIG_GLPI_API_URL,
     CONFIG_GLPI_APP_TOKEN,
@@ -13,6 +13,7 @@ import {
 } from "../settings/settings";
 import GlpiInitSessionService from "./GlpiInitSession";
 import GlpiKillSessionService from "./GlpiKillSession";
+import { timeout } from "../models/Constants";
 
 export default class GlpiUserDataService {
     private static async getEnv(
@@ -78,7 +79,7 @@ export default class GlpiUserDataService {
         const userResponse = await http.get(
             GLPIURL + "/apirest.php/search/User/",
             {
-                timeout: apiTimeout,
+                timeout: timeout,
                 headers: {
                     "App-Token": GLPIAPPTOKEN,
                     "Session-Token": GLPISESSIONTOKEN,
@@ -173,7 +174,7 @@ export default class GlpiUserDataService {
         const entityResponse = await http.get(
             GLPIURL + "/apirest.php/search/Entity",
             {
-                timeout: apiTimeout,
+                timeout: timeout,
                 headers: {
                     "App-Token": GLPIAPPTOKEN,
                     "Session-Token": GLPISESSIONTOKEN,
