@@ -51,20 +51,17 @@ export default class ProcessMessages {
 
             // visitor email
             if (
-                message.sender.emails &&
-                message.sender.emails[0] &&
-                message.sender.emails[0].address
+                livechatRoom.visitor.visitorEmails &&
+                livechatRoom.visitor.visitorEmails[0] &&
+                livechatRoom.visitor.visitorEmails[0].address
             ) {
-                userEmail = message.sender.emails[0].address;
+                userEmail = livechatRoom.visitor.visitorEmails[0].address;
             } else {
                 userEmail = "";
             }
             // visitor username
-            if (
-                room.visitor.livechatData &&
-                room.visitor.livechatData.username
-            ) {
-                userName = room.visitor.livechatData.username;
+            if (livechatRoom.visitor.username) {
+                userName = livechatRoom.visitor.username;
             } else {
                 userName = "";
             }
@@ -81,9 +78,9 @@ export default class ProcessMessages {
 
             // store visitor data
             messageAsObject["visitor"] = {
-                _id: message.sender.id,
+                _id: livechatRoom.visitor.id,
                 username: userName,
-                name: message.sender.name,
+                name: livechatRoom.visitor.name,
                 email: userEmail,
                 phone: userPhone,
                 userType: message.sender.type,
@@ -253,5 +250,60 @@ export default class ProcessMessages {
 
         // return data
         return data;
+    }
+
+    public static async getUser(
+        userType: string,
+        room: ILivechatRoom,
+        logger: ILogger
+    ): Promise<any> {
+        let visitor = {};
+        let userEmail: string;
+        let userName: string;
+        let userPhone: string;
+
+        if (userType === "Visitor") {
+            // visitor email
+            if (
+                room.visitor.visitorEmails &&
+                room.visitor.visitorEmails[0] &&
+                room.visitor.visitorEmails[0].address
+            ) {
+                userEmail = room.visitor.visitorEmails[0].address;
+            } else {
+                userEmail = "";
+            }
+            // visitor username
+            if (
+                room.visitor.livechatData &&
+                room.visitor.livechatData.username
+            ) {
+                userName = room.visitor.livechatData.username;
+            } else {
+                userName = "";
+            }
+            // visitor phone
+            if (
+                room.visitor.phone &&
+                room.visitor.phone[0] &&
+                room.visitor.phone[0].phoneNumber
+            ) {
+                userPhone = room.visitor.phone[0].phoneNumber;
+            } else {
+                userPhone = "";
+            }
+
+            // store visitor data
+            visitor = {
+                _id: room.visitor.id,
+                username: userName,
+                name: room.visitor.name,
+                email: userEmail,
+                phone: userPhone,
+                userType: userType,
+            };
+
+            return visitor;
+        }
     }
 }
