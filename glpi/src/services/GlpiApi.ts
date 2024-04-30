@@ -4,7 +4,7 @@ import {
     IRead,
 } from "@rocket.chat/apps-engine/definition/accessors";
 import {
-    CONFIG_GLPI_API_URL,
+    CONFIG_GLPI_URL,
     CONFIG_GLPI_APP_TOKEN,
     CONFIG_GLPI_DEFAULT_USER,
     CONFIG_GLPI_REQUEST_ORIGIN_ID,
@@ -21,9 +21,9 @@ export default class GlpiApi {
         read: IRead,
         logger: ILogger
     ): Promise<GlpiEnvironment> {
-        const GLPI_API_URL: string = await getSettingValue(
+        const GLPI_URL: string = await getSettingValue(
             read.getEnvironmentReader(),
-            CONFIG_GLPI_API_URL
+            CONFIG_GLPI_URL
         );
 
         const GLPI_APP_TOKEN: string = await getSettingValue(
@@ -52,7 +52,7 @@ export default class GlpiApi {
         );
 
         return {
-            GLPI_API_URL,
+            GLPI_URL,
             GLPI_APP_TOKEN,
             GLPI_USER_TOKEN,
             GLPI_SUBJECT_DEFAULT,
@@ -66,14 +66,17 @@ export default class GlpiApi {
         read: IRead,
         logger: ILogger
     ): Promise<string | Error> {
-        const { GLPI_API_URL, GLPI_APP_TOKEN, GLPI_USER_TOKEN } =
-            await this.getEnv(http, read, logger);
+        const { GLPI_URL, GLPI_APP_TOKEN, GLPI_USER_TOKEN } = await this.getEnv(
+            http,
+            read,
+            logger
+        );
 
         let glpiSessionToken: string = "";
 
         try {
             const apiResponse = await http.get(
-                GLPI_API_URL + "/apirest.php/initSession/",
+                GLPI_URL + "/apirest.php/initSession/",
                 {
                     timeout: timeout,
                     headers: {

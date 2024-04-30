@@ -1,5 +1,5 @@
 export interface GlpiEnvironment {
-    GLPI_API_URL: string;
+    GLPI_URL: string;
     GLPI_APP_TOKEN: string;
     GLPI_USER_TOKEN: string;
     GLPI_SUBJECT_DEFAULT: string;
