@@ -13,6 +13,7 @@ import {
     getSettingValue,
 } from "../settings/settings";
 import { GlpiEnvironment, timeout } from "../settings/constants";
+import { IRoom } from "@rocket.chat/apps-engine/definition/rooms";
 
 export default class GlpiApi {
     //retorna as variaveis de ambiente do GLPI
@@ -297,17 +298,12 @@ export default class GlpiApi {
             userResponse.statusCode !== 200 ||
             (userResponse.content && JSON.parse(userResponse.content)["ERROR"])
         ) {
-            logger.error(
-                "GlpiUserData.ts - getUser() - Error 01: " +
-                    userResponse.content
-            );
+            logger.error("getUser() - Error 01: " + userResponse.content);
             return undefined;
         }
 
         if (!userResponse || !userResponse.content) {
-            logger.error(
-                "GlpiUserData.ts - getUser() - Error 02: NO return from GLPI"
-            );
+            logger.error("getUser() - Error 02: NO return from GLPI");
             return undefined;
         }
 
@@ -347,23 +343,13 @@ export default class GlpiApi {
                 userPhone = "9" + userPhone;
             }
             userPhone = phoneAreaCode + userPhone;
-            /*
-            if (logger) {
-                logger.debug("GlpiUserData.ts - Debug 01 - " + userPhone);
-            }
-            */
         }
 
         if (userName) {
             userName = userName.replace(/\.com(\.br)?$/, "");
-            /*
-            if (logger) {
-                logger.debug("GlpiUserData.ts - Debug 02 - " + userName);
-            }
-            */
         }
 
-        let FULLUSER = await this.getUser(
+        let glpiFullUser = await this.getUser(
             http,
             read,
             logger,
@@ -374,8 +360,8 @@ export default class GlpiApi {
 
         const { GLPI_DEFAULT_USER } = await this.getEnv(read, logger);
 
-        if (!FULLUSER || FULLUSER.totalcount === 0) {
-            FULLUSER = await this.getUser(
+        if (!glpiFullUser || glpiFullUser.totalcount === 0) {
+            glpiFullUser = await this.getUser(
                 http,
                 read,
                 logger,
@@ -385,30 +371,102 @@ export default class GlpiApi {
             );
         }
 
-        if (!FULLUSER) {
+        if (!glpiFullUser) {
             return undefined;
         }
 
-        const ENTITYNAME = FULLUSER.data[0][77];
+        const ENTITY_NAME = glpiFullUser.data[0][77];
 
-        const FULLENTITY = await this.getEntity(http, read, logger, ENTITYNAME);
+        const GLPI_FULL_ENTITY = await this.getEntity(
+            http,
+            read,
+            logger,
+            ENTITY_NAME
+        );
 
         const GLPI_FULL_USER = {
-            userID: FULLUSER.data[0][2],
-            userName: FULLUSER.data[0][1],
-            email: FULLUSER.data[0][5],
-            phone: FULLUSER.data[0][6],
-            firstName: FULLUSER.data[0][9],
-            lastName: FULLUSER.data[0][34],
-            mobile: FULLUSER.data[0][11],
+            userID: glpiFullUser.data[0][2],
+            userName: glpiFullUser.data[0][1],
+            email: glpiFullUser.data[0][5],
+            phone: glpiFullUser.data[0][6],
+            firstName: glpiFullUser.data[0][9],
+            lastName: glpiFullUser.data[0][34],
+            mobile: glpiFullUser.data[0][11],
             entity: {
-                entityID: FULLENTITY.data[0][2],
-                entityFullName: FULLENTITY.data[0][1],
-                entityName: FULLENTITY.data[0][14],
-                entityCNPJ: FULLENTITY.data[0][70],
+                entityID: GLPI_FULL_ENTITY.data[0][2],
+                entityFullName: GLPI_FULL_ENTITY.data[0][1],
+                entityName: GLPI_FULL_ENTITY.data[0][14],
+                entityCNPJ: GLPI_FULL_ENTITY.data[0][70],
             },
         };
 
         return GLPI_FULL_USER;
+    }
+
+    // cria o chamado no glpi
+    public static async createTicket(
+        http: IHttp,
+        read: IRead,
+        logger: ILogger,
+        GlpiFullUser: any,
+        departmentName: string
+    ): Promise<string | undefined> {
+        const {
+            GLPI_URL,
+            GLPI_APP_TOKEN,
+            GLPI_USER_TOKEN,
+            GLPI_SUBJECT_DEFAULT,
+            GLPI_REQUEST_ORIGIN_ID,
+        } = await this.getEnv(read, logger);
+
+        const glpiSessionToken = await this.initSession(http, read, logger);
+
+        const ticketResponse = await http.post(
+            GLPI_URL + "/apirest.php/Ticket",
+            {
+                timeout: timeout,
+                headers: {
+                    "App-Token": GLPI_APP_TOKEN,
+                    "Session-Token": glpiSessionToken,
+                    "Content-Type": "application/json",
+                },
+                data: {
+                    input: {
+                        name: GLPI_SUBJECT_DEFAULT,
+                        content: `Ticket: ${GLPI_SUBJECT_DEFAULT} \nDepartamento: ${departmentName}`,
+                        _users_id_requester: GlpiFullUser.userID,
+                        requesttypes_id: GLPI_REQUEST_ORIGIN_ID,
+                        entities_id: GlpiFullUser.entity.entityID,
+                        type: "2",
+                    },
+                },
+            }
+        );
+
+        if (
+            !ticketResponse ||
+            !ticketResponse.statusCode ||
+            ticketResponse.statusCode !== 201 ||
+            (ticketResponse.content &&
+                JSON.parse(ticketResponse.content)["ERROR"])
+        ) {
+            logger.error(
+                "GlpiCreateTicket.ts - Error 01: " + ticketResponse.content
+            );
+            return undefined;
+        }
+
+        if (!ticketResponse || !ticketResponse.content) {
+            logger.error("GlpiCreateTicket.ts - Error 02: NO return from GLPI");
+            return undefined;
+        }
+
+        let ticketNumber = JSON.parse(ticketResponse.content);
+
+        ticketNumber = ticketNumber.id;
+
+        this.killSession(http, read, logger, glpiSessionToken);
+
+        return ticketNumber;
     }
 }

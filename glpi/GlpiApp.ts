@@ -17,6 +17,7 @@ import { IAppInfo } from "@rocket.chat/apps-engine/definition/metadata";
 import { RoomType } from "@rocket.chat/apps-engine/definition/rooms";
 import {
     CONFIG_GLPI_DEPARTMENTS,
+    CONFIG_GLPI_NEW_TICKET_MESSAGE,
     getSettingValue,
     SETTINGS,
 } from "./src/settings/settings";
@@ -139,7 +140,53 @@ export class GlpiApp
             visitor.username,
             visitor.phone
         );
+        if (!GLPI_FULL_USER) {
+            // if no user
+            return;
+        }
 
-        this.getLogger().debug(`Debug: ${JSON.stringify(GLPI_FULL_USER)}`);
+        let department = "";
+        if (context.to.name) {
+            department = context.to.name;
+        }
+
+        const GLPI_TICKET_NUMBER = await GlpiApi.createTicket(
+            http,
+            read,
+            this.getLogger(),
+            GLPI_FULL_USER,
+            department
+        );
+
+        if (
+            !context.room.customFields ||
+            !context.room.customFields.glpiTicketNumber
+        ) {
+            const roomUp = await modify
+                .getExtender()
+                .extendRoom(context.room.id, {} as IUser);
+            roomUp.addCustomField("glpiTicketNumber", GLPI_TICKET_NUMBER);
+            await modify.getExtender().finish(roomUp);
+        }
+
+        // Returns a message to the customer with the created ticket
+        let newTicketMessage = await getSettingValue(
+            read.getEnvironmentReader(),
+            CONFIG_GLPI_NEW_TICKET_MESSAGE
+        );
+
+        if (CONFIG_GLPI_NEW_TICKET_MESSAGE) {
+            newTicketMessage =
+                "*[Mensagem Automática]*\n" +
+                newTicketMessage.replace("%s", GLPI_TICKET_NUMBER);
+            // Defines user created by the App
+            const appUser = await read.getUserReader().getAppUser(this.getID());
+            const ticketMessage = modify.getCreator().startLivechatMessage();
+            ticketMessage
+                .setText(newTicketMessage.toString())
+                .setRoom(context.room)
+                .setSender(appUser!);
+            await modify.getCreator().finish(ticketMessage);
+        }
     }
 }

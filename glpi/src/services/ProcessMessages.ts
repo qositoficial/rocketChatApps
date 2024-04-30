@@ -262,6 +262,10 @@ export default class ProcessMessages {
         let userName: string;
         let userPhone: string;
 
+        if (logger) {
+            logger.debug(`Debug #00001 - ${JSON.stringify(room.customFields)}`);
+        }
+
         if (userType === "Visitor") {
             // visitor email
             if (
