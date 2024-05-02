@@ -475,15 +475,54 @@ export default class GlpiApi {
         http: IHttp,
         read: IRead,
         logger: ILogger,
-        data: any,
-        GlpiFullUser: any
+        data: any
     ) {
-        const { GLPI_URL, GLPI_APP_TOKEN, GLPI_USER_TOKEN } = await this.getEnv(
-            read,
-            logger
-        );
+        const {
+            GLPI_URL,
+            GLPI_APP_TOKEN,
+            GLPI_USER_TOKEN,
+            GLPI_REQUEST_ORIGIN_ID,
+        } = await this.getEnv(read, logger);
 
         const glpiSessionToken = await this.initSession(http, read, logger);
+
+        const tickets = await this.formatTickets(data);
+
+        const ticketBody = await this.formatTicketBody(data);
+
+        for (let c = 0; c < ticketBody.length; c++) {
+            for (let i = 0; i < tickets.length; i++) {
+                const response = await http.post(
+                    GLPI_URL +
+                        "/apirest.php/Ticket/" +
+                        tickets[i] +
+                        "/ITILFollowup",
+                    {
+                        timeout: timeout,
+                        headers: {
+                            "App-Token": GLPI_APP_TOKEN,
+                            "Session-Token": glpiSessionToken,
+                            "Content-Type": "application/json",
+                        },
+                        data: {
+                            input: {
+                                itemtype: "Ticket",
+                                items_id: tickets[i],
+                                users_id: data.agent.userID,
+                                requesttypes_id: GLPI_REQUEST_ORIGIN_ID,
+                                entities_id: data.visitor.entity.entityID,
+                                content: ticketBody[c],
+                            },
+                        },
+                    }
+                );
+                if (logger) {
+                    logger.debug(
+                        "GlpiCloseChat 2 - " + JSON.stringify(response)
+                    );
+                }
+            }
+        }
     }
 
     private static async formatTickets(data) {
@@ -505,10 +544,11 @@ export default class GlpiApi {
 
         return ticketNumbers;
     }
+
     private static async formatTicketBody(data) {
         let text = "";
         let fileConvert = "";
-        let bodyMessages = {};
+        let bodyMessages: Array<string> = [];
 
         for (let i: number = 0; i < data.messages.length; i++) {
             // Formatando a data
@@ -611,7 +651,7 @@ export default class GlpiApi {
                         "</p>";
                 }
             }
-            bodyMessages[i]["textMessage"] = text;
+            bodyMessages[i] = text;
         }
 
         return bodyMessages;

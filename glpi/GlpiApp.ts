@@ -25,6 +25,7 @@ import ProcessMessages from "./src/services/ProcessMessages";
 import {
     ILivechatRoom,
     ILivechatTransferEventContext,
+    IPostLivechatRoomClosed,
     IPostLivechatRoomTransferred,
 } from "@rocket.chat/apps-engine/definition/livechat";
 import { IUser } from "@rocket.chat/apps-engine/definition/users";
@@ -32,7 +33,10 @@ import GlpiApi from "./src/services/GlpiApi";
 
 export class GlpiApp
     extends App
-    implements IPostMessageSent, IPostLivechatRoomTransferred
+    implements
+        IPostMessageSent,
+        IPostLivechatRoomTransferred,
+        IPostLivechatRoomClosed
 {
     constructor(info: IAppInfo, logger: ILogger, accessors: IAppAccessors) {
         super(info, logger, accessors);
@@ -189,5 +193,33 @@ export class GlpiApp
                 .setSender(appUser!);
             await modify.getCreator().finish(ticketMessage);
         }
+    }
+
+    public async executePostLivechatRoomClosed(
+        room: ILivechatRoom,
+        read: IRead,
+        http: IHttp,
+        persistence: IPersistence,
+        message: IMessage,
+        modify?: IModify | undefined
+    ): Promise<void> {
+        // Pegar dados da conversa
+        const data = await ProcessMessages.processData(
+            "Message",
+            http,
+            read,
+            persistence,
+            room,
+            message,
+            this.getLogger()
+        );
+
+        if (!data) {
+            return;
+        }
+
+        await GlpiApi.updateTicket(http, read, this.getLogger(), data);
+
+        return;
     }
 }
