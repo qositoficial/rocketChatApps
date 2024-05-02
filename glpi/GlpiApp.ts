@@ -203,7 +203,6 @@ export class GlpiApp
         message: IMessage,
         modify?: IModify | undefined
     ): Promise<void> {
-        // Pegar dados da conversa
         const data = await ProcessMessages.processData(
             "Message",
             http,
