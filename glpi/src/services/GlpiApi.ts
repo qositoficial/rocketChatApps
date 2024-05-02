@@ -469,4 +469,151 @@ export default class GlpiApi {
 
         return ticketNumber;
     }
+
+    // atualiza ticket com as mensagens
+    public static async updateTicket(
+        http: IHttp,
+        read: IRead,
+        logger: ILogger,
+        data: any,
+        GlpiFullUser: any
+    ) {
+        const { GLPI_URL, GLPI_APP_TOKEN, GLPI_USER_TOKEN } = await this.getEnv(
+            read,
+            logger
+        );
+
+        const glpiSessionToken = await this.initSession(http, read, logger);
+    }
+
+    private static async formatTickets(data) {
+        let ticketNumbers: Array<number> = [];
+        // Remover o # dos tickets
+        if (data.tags) {
+            for (let i = 0; i < data.tags.length; i++) {
+                let ticketId = data.tags[i].replace("#", "");
+                if (typeof ticketId == "number") {
+                    ticketNumbers[i] = ticketId;
+                }
+            }
+        }
+
+        if (data.customFields.glpiTicketNumber) {
+            ticketNumbers[ticketNumbers.length] =
+                data.customFields.glpiTicketNumber;
+        }
+
+        return ticketNumbers;
+    }
+    private static async formatTicketBody(data) {
+        let text = "";
+        let fileConvert = "";
+        let bodyMessages = {};
+
+        for (let i: number = 0; i < data.messages.length; i++) {
+            // Formatando a data
+            const updatedAtString = data.messages[i].updatedAt;
+            const updatedAtDate = new Date(updatedAtString);
+
+            const formattedDate =
+                updatedAtDate.getFullYear() +
+                "-" +
+                String(updatedAtDate.getMonth() + 1).padStart(2, "0") +
+                "-" +
+                String(updatedAtDate.getDate()).padStart(2, "0") +
+                " " +
+                String(updatedAtDate.getHours()).padStart(2, "0") +
+                ":" +
+                String(updatedAtDate.getMinutes()).padStart(2, "0") +
+                ":" +
+                String(updatedAtDate.getSeconds()).padStart(2, "0");
+
+            // se tiver anexo
+            if (data.base64String) {
+                fileConvert = data.base64String.typeFile;
+                if (fileConvert.toLowerCase().startsWith("audio")) {
+                    fileConvert =
+                        "<div><audio controls><source src='" +
+                        data.base64String.base64String +
+                        "' type='" +
+                        fileConvert +
+                        "'>Your browser does not support the audio element.</audio></div>";
+                } else if (fileConvert.toLowerCase().startsWith("image")) {
+                    fileConvert =
+                        "<div><img height='100' src='" +
+                        data.base64String.base64String +
+                        "' alt='image'/></div>";
+                } else if (fileConvert.toLowerCase().startsWith("video")) {
+                    fileConvert =
+                        "<div><video width='160' height='120' controls><source src='" +
+                        data.base64String.base64String +
+                        "' type='" +
+                        fileConvert +
+                        "'>Your browser does not support the video element.</video></div>";
+                } else if (
+                    fileConvert.toLowerCase().startsWith("application")
+                ) {
+                    fileConvert =
+                        "<div><object width='160' height='120' data='data:" +
+                        data.base64String.base64String +
+                        "' type='" +
+                        fileConvert +
+                        "'>Your browser does not support the object element.</object></div>";
+                }
+            }
+
+            if (data.messages[i] && data.mensagens[i].agent) {
+                if (data.messages[i].base64String) {
+                    text +=
+                        "<p>" +
+                        formattedDate +
+                        " - " +
+                        data.messages[i].agent.firstName +
+                        " (" +
+                        data.messages[i].agent.userName +
+                        "): " +
+                        fileConvert +
+                        "</p>";
+                } else {
+                    text +=
+                        "<p>" +
+                        formattedDate +
+                        " - " +
+                        data.messages[i].agent.firstName +
+                        " (" +
+                        data.messages[i].agent.userName +
+                        "): " +
+                        data.messages[i].messageText +
+                        "</p>";
+                }
+            } else {
+                if (data.messages[i].base64String) {
+                    text +=
+                        "<p>" +
+                        formattedDate +
+                        " - " +
+                        data.messages[i].visitor.firstName +
+                        " (" +
+                        data.messages[i].visitor.phone +
+                        "): " +
+                        fileConvert +
+                        "</p>";
+                } else {
+                    text +=
+                        "<p>" +
+                        formattedDate +
+                        " - " +
+                        data.messages[i].visitor.firstName +
+                        " (" +
+                        data.messages[i].visitor.phone +
+                        "): " +
+                        data.messages[i].messageText +
+                        "</p>";
+                }
+            }
+            bodyMessages[i]["textMessage"] = text;
+        }
+
+        return bodyMessages;
+    }
 }

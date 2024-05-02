@@ -333,11 +333,13 @@ export default class ProcessMessages {
 
     private static async convertAtachment(data: any): Promise<any> {
         if (data) {
-            const typeFile = data.headers["content-type"];
-            const base64String = Buffer.from(data.content, "binary").toString(
-                "base64"
-            );
-            return base64String;
+            const fileConvert = {};
+            fileConvert["typeFile"] = data.headers["content-type"];
+            fileConvert["base64String"] = Buffer.from(
+                data.content,
+                "binary"
+            ).toString("base64");
+            return fileConvert;
         }
     }
 }
