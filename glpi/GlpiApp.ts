@@ -68,6 +68,7 @@ export class GlpiApp
         const data = await ProcessMessages.processData(
             // process messages
             "Message",
+            http,
             read,
             persistence,
             message.room as ILivechatRoom,

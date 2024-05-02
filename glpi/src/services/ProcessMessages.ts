@@ -1,4 +1,5 @@
 import {
+    IHttp,
     ILogger,
     IPersistence,
     IRead,
@@ -12,10 +13,12 @@ import {
     RocketChatAssociationRecord,
 } from "@rocket.chat/apps-engine/definition/metadata";
 import { UserType } from "@rocket.chat/apps-engine/definition/users";
+import { timeout } from "../settings/constants";
 
 export default class ProcessMessages {
     public static async processData(
         eventType: string,
+        http: IHttp,
         read: IRead,
         persistence: IPersistence,
         room: ILivechatRoom,
@@ -113,6 +116,27 @@ export default class ProcessMessages {
                     message.attachments[0].audioUrl ||
                     message.attachments[0].videoUrl ||
                     message.attachments[0]!.title!.link!;
+
+                const responseAtachment = await http.get(
+                    "http://localhost:3000" + attachUrl,
+                    {
+                        encoding: null,
+                        timeout: timeout,
+                        headers: {
+                            "X-Auth-Token":
+                                "6iiou5rF5UepBwEJcVgrtj-dFakORyqBVasW9yJL6j6",
+                            "X-User-Id": "zYNxGxjS9NBp95Tqn",
+                        },
+                    }
+                );
+
+                const base64String = await this.convertAtachment(
+                    responseAtachment
+                );
+
+                logger.debug(`#Debug res: ${JSON.stringify(base64String)}`);
+
+                messageAsObject["base64String"] = base64String;
 
                 if (attachUrl.indexOf("http") != 0) {
                     attachUrl = `${serverUrl + attachUrl}`;
@@ -262,10 +286,6 @@ export default class ProcessMessages {
         let userName: string;
         let userPhone: string;
 
-        if (logger) {
-            logger.debug(`Debug #00001 - ${JSON.stringify(room.customFields)}`);
-        }
-
         if (userType === "Visitor") {
             // visitor email
             if (
@@ -308,6 +328,16 @@ export default class ProcessMessages {
             };
 
             return visitor;
+        }
+    }
+
+    private static async convertAtachment(data: any): Promise<any> {
+        if (data) {
+            const typeFile = data.headers["content-type"];
+            const base64String = Buffer.from(data.content, "binary").toString(
+                "base64"
+            );
+            return base64String;
         }
     }
 }
