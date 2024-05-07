@@ -472,6 +472,7 @@ export default class GlpiApi {
 
     // atualiza ticket com as mensagens
     public static async updateTicket(
+        room: IRoom,
         http: IHttp,
         read: IRead,
         logger: ILogger,
@@ -484,68 +485,80 @@ export default class GlpiApi {
             GLPI_REQUEST_ORIGIN_ID,
         } = await this.getEnv(read, logger);
 
+        if (logger) {
+            logger.debug(
+                `Debug updateTicket 001 - ${JSON.stringify(data.visitor)}`
+            );
+        }
+
         const glpiSessionToken = await this.initSession(http, read, logger);
 
-        const tickets = await this.formatTickets(data);
+        const tickets = await this.formatTickets(data, room, logger);
 
-        const ticketBody = await this.formatTicketBody(data);
+        const ticketBody = await this.formatTicketBody(data, logger);
+        logger.debug(`Debug body 001: ${ticketBody.length}`);
+        logger.debug(`Debug body 002: ${JSON.stringify(ticketBody)}`);
 
-        for (let c = 0; c < ticketBody.length; c++) {
-            for (let i = 0; i < tickets.length; i++) {
-                const response = await http.post(
-                    GLPI_URL +
-                        "/apirest.php/Ticket/" +
-                        tickets[i] +
-                        "/ITILFollowup",
-                    {
-                        timeout: timeout,
-                        headers: {
-                            "App-Token": GLPI_APP_TOKEN,
-                            "Session-Token": glpiSessionToken,
-                            "Content-Type": "application/json",
-                        },
-                        data: {
-                            input: {
-                                itemtype: "Ticket",
-                                items_id: tickets[i],
-                                users_id: data.agent.userID,
-                                requesttypes_id: GLPI_REQUEST_ORIGIN_ID,
-                                entities_id: data.visitor.entity.entityID,
-                                content: ticketBody[c],
+        if (ticketBody) {
+            for (let c = 0; c < ticketBody.length; c++) {
+                for (let i = 0; i < tickets.length; i++) {
+                    const response = await http.post(
+                        GLPI_URL +
+                            "/apirest.php/Ticket/" +
+                            tickets[i] +
+                            "/ITILFollowup",
+                        {
+                            timeout: timeout,
+                            headers: {
+                                "App-Token": GLPI_APP_TOKEN,
+                                "Session-Token": glpiSessionToken,
+                                "Content-Type": "application/json",
                             },
-                        },
-                    }
-                );
-                if (logger) {
-                    logger.debug(
-                        "GlpiCloseChat 2 - " + JSON.stringify(response)
+                            data: {
+                                input: {
+                                    itemtype: "Ticket",
+                                    items_id: tickets[i],
+                                    users_id: data.agent.userID,
+                                    requesttypes_id: GLPI_REQUEST_ORIGIN_ID,
+                                    entities_id: data.visitor.entity.entityID,
+                                    content: ticketBody[c],
+                                },
+                            },
+                        }
                     );
+                    if (logger) {
+                        logger.debug(
+                            "GlpiCloseChat 2 - " + JSON.stringify(response)
+                        );
+                    }
                 }
             }
         }
+
+        this.killSession(http, read, logger, glpiSessionToken);
     }
 
-    private static async formatTickets(data) {
+    private static async formatTickets(data, room: IRoom, logger: ILogger) {
         let ticketNumbers: Array<number> = [];
+
         // Remover o # dos tickets
         if (data.tags) {
             for (let i = 0; i < data.tags.length; i++) {
                 let ticketId = data.tags[i].replace("#", "");
-                if (typeof ticketId == "number") {
-                    ticketNumbers[i] = ticketId;
+                if (!isNaN(ticketId)) {
+                    ticketNumbers.push(ticketId);
                 }
             }
         }
 
-        if (data.customFields.glpiTicketNumber) {
-            ticketNumbers[ticketNumbers.length] =
-                data.customFields.glpiTicketNumber;
+        if (room && room.customFields && room.customFields.glpiTicketNumber) {
+            ticketNumbers.push(room.customFields.glpiTicketNumber);
         }
 
         return ticketNumbers;
     }
 
-    private static async formatTicketBody(data) {
+    private static async formatTicketBody(data, logger: ILogger) {
         let text = "";
         let fileConvert = "";
         let bodyMessages: Array<string> = [];
@@ -651,7 +664,7 @@ export default class GlpiApi {
                         "</p>";
                 }
             }
-            bodyMessages[i] = text;
+            bodyMessages.push(text);
         }
 
         return bodyMessages;

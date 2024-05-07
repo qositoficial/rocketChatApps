@@ -22,8 +22,8 @@ export default class ProcessMessages {
         read: IRead,
         persistence: IPersistence,
         room: ILivechatRoom,
-        message: ILivechatMessage,
-        logger: ILogger
+        message?: ILivechatMessage,
+        logger?: ILogger
     ): Promise<any> {
         let data: any = undefined;
         let roomMessages: any;
@@ -133,8 +133,6 @@ export default class ProcessMessages {
                 const base64String = await this.convertAtachment(
                     responseAtachment
                 );
-
-                logger.debug(`#Debug res: ${JSON.stringify(base64String)}`);
 
                 messageAsObject["base64String"] = base64String;
 

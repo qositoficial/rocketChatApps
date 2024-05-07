@@ -199,25 +199,21 @@ export class GlpiApp
         room: ILivechatRoom,
         read: IRead,
         http: IHttp,
-        persistence: IPersistence,
-        message: IMessage,
-        modify?: IModify | undefined
+        persistence: IPersistence
     ): Promise<void> {
         const data = await ProcessMessages.processData(
             "Message",
             http,
             read,
             persistence,
-            room,
-            message,
-            this.getLogger()
+            room
         );
 
         if (!data) {
             return;
         }
 
-        await GlpiApi.updateTicket(http, read, this.getLogger(), data);
+        await GlpiApi.updateTicket(room, http, read, this.getLogger(), data);
 
         return;
     }
