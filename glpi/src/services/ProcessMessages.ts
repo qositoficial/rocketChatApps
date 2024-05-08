@@ -130,11 +130,11 @@ export default class ProcessMessages {
                     }
                 );
 
-                const base64String = await this.convertAtachment(
+                const base64File = await this.convertAtachment(
                     responseAtachment
                 );
 
-                messageAsObject["base64String"] = base64String;
+                messageAsObject["base64File"] = base64File;
 
                 if (attachUrl.indexOf("http") != 0) {
                     attachUrl = `${serverUrl + attachUrl}`;

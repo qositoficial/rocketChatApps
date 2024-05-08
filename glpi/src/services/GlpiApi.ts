@@ -485,60 +485,60 @@ export default class GlpiApi {
             GLPI_REQUEST_ORIGIN_ID,
         } = await this.getEnv(read, logger);
 
-        if (logger) {
-            logger.debug(
-                `Debug updateTicket 001 - ${JSON.stringify(data.visitor)}`
-            );
-        }
-
         const glpiSessionToken = await this.initSession(http, read, logger);
-
+        /*
         const tickets = await this.formatTickets(data, room, logger);
 
-        const ticketBody = await this.formatTicketBody(data, logger);
-        logger.debug(`Debug body 001: ${ticketBody.length}`);
-        logger.debug(`Debug body 002: ${JSON.stringify(ticketBody)}`);
-
-        if (ticketBody) {
-            for (let c = 0; c < ticketBody.length; c++) {
-                for (let i = 0; i < tickets.length; i++) {
-                    const response = await http.post(
-                        GLPI_URL +
-                            "/apirest.php/Ticket/" +
-                            tickets[i] +
-                            "/ITILFollowup",
-                        {
-                            timeout: timeout,
-                            headers: {
-                                "App-Token": GLPI_APP_TOKEN,
-                                "Session-Token": glpiSessionToken,
-                                "Content-Type": "application/json",
-                            },
-                            data: {
-                                input: {
-                                    itemtype: "Ticket",
-                                    items_id: tickets[i],
-                                    users_id: data.agent.userID,
-                                    requesttypes_id: GLPI_REQUEST_ORIGIN_ID,
-                                    entities_id: data.visitor.entity.entityID,
-                                    content: ticketBody[c],
-                                },
-                            },
-                        }
-                    );
-                    if (logger) {
-                        logger.debug(
-                            "GlpiCloseChat 2 - " + JSON.stringify(response)
-                        );
-                    }
-                }
-            }
+        if (!tickets) {
+            return;
         }
+        */
+        const ticketBody = await this.formatTicketBody(data, logger);
+
+        // if (ticketBody) {
+        //     for (let c = 0; c < ticketBody.length; c++) {
+        //         for (let i = 0; i < tickets.length; i++) {
+        //             const response = await http.post(
+        //                 GLPI_URL +
+        //                     "/apirest.php/Ticket/" +
+        //                     tickets[i] +
+        //                     "/ITILFollowup",
+        //                 {
+        //                     timeout: timeout,
+        //                     headers: {
+        //                         "App-Token": GLPI_APP_TOKEN,
+        //                         "Session-Token": glpiSessionToken,
+        //                         "Content-Type": "application/json",
+        //                     },
+        //                     data: {
+        //                         input: {
+        //                             itemtype: "Ticket",
+        //                             items_id: tickets[i],
+        //                             users_id: data.agent.userID,
+        //                             requesttypes_id: GLPI_REQUEST_ORIGIN_ID,
+        //                             entities_id: data.visitor.entity.entityID,
+        //                             content: ticketBody[c],
+        //                         },
+        //                     },
+        //                 }
+        //             );
+        //             if (logger) {
+        //                 logger.debug(
+        //                     "GlpiCloseChat 2 - " + JSON.stringify(response)
+        //                 );
+        //             }
+        //         }
+        //     }
+        // }
 
         this.killSession(http, read, logger, glpiSessionToken);
     }
 
-    private static async formatTickets(data, room: IRoom, logger: ILogger) {
+    private static async formatTickets(
+        data,
+        room: IRoom,
+        logger: ILogger
+    ): Promise<any> {
         let ticketNumbers: Array<number> = [];
 
         // Remover o # dos tickets
@@ -558,89 +558,147 @@ export default class GlpiApi {
         return ticketNumbers;
     }
 
-    private static async formatTicketBody(data, logger: ILogger) {
-        let text = "";
-        let fileConvert = "";
+    private static async formatFileToText(
+        base64File: any,
+        logger?: ILogger
+    ): Promise<string> {
+        let fileConvert: string = "";
+        base64File = base64File;
+        logger?.debug(`Debug b64 1 - ${JSON.stringify(base64File)}`);
+
+        logger?.debug(`Debug audio 1 - ${JSON.stringify(base64File.fileType)}`);
+        if (base64File && base64File.fileType) {
+            logger?.debug(
+                `Debug audio 2- ${JSON.stringify(base64File.fileType)}`
+            );
+            if (base64File.fileType.toLowerCase().startsWith("audio")) {
+                logger?.debug(
+                    `Debug audio 3 - ${JSON.stringify(base64File.fileType)}`
+                );
+            }
+        }
+        /*
+
+            fileConvert =
+                "<div><audio controls><source src='" +
+                base64File.base64String +
+                "' type='" +
+                base64File.fileType +
+                "'>Your browser does not support the audio element.</audio></div>";
+            return fileConvert;
+        }
+
+
+        if (base64File.fileType.toLowerCase().startsWith("image")) {
+            fileConvert =
+                "<div><img height='100' src='" +
+                base64File.base64String +
+                "' alt='image'/></div>";
+            return fileConvert;
+        }
+
+        if (base64File.fileType.toLowerCase().startsWith("video")) {
+            fileConvert =
+                "<div><video width='160' height='120' controls><source src='" +
+                base64File.base64String +
+                "' type='" +
+                base64File.fileType +
+                "'>Your browser does not support the video element.</video></div>";
+            return fileConvert;
+        }
+
+        if (base64File.fileType.toLowerCase().startsWith("application")) {
+            fileConvert =
+                "<div><object width='160' height='120' data='data:" +
+                base64File.base64String +
+                "' type='" +
+                base64File.fileType +
+                "'>Your browser does not support the object element.</object></div>";
+            return fileConvert;
+        }
+*/
+        return fileConvert;
+    }
+
+    private static async formatDate(date: string): Promise<string> {
+        const updatedAtDate = new Date(date);
+
+        const formattedDate =
+            updatedAtDate.getFullYear() +
+            "-" +
+            String(updatedAtDate.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(updatedAtDate.getDate()).padStart(2, "0") +
+            " " +
+            String(updatedAtDate.getHours()).padStart(2, "0") +
+            ":" +
+            String(updatedAtDate.getMinutes()).padStart(2, "0") +
+            ":" +
+            String(updatedAtDate.getSeconds()).padStart(2, "0");
+
+        return formattedDate;
+    }
+
+    private static async formatTicketBody(
+        data: any,
+        logger: ILogger
+    ): Promise<any> {
+        let text: string = "";
+        let fileText: string = "";
         let bodyMessages: Array<string> = [];
 
-        for (let i: number = 0; i < data.messages.length; i++) {
-            // Formatando a data
-            const updatedAtString = data.messages[i].updatedAt;
-            const updatedAtDate = new Date(updatedAtString);
+        if (!data.messages) {
+            return;
+        }
 
-            const formattedDate =
-                updatedAtDate.getFullYear() +
-                "-" +
-                String(updatedAtDate.getMonth() + 1).padStart(2, "0") +
-                "-" +
-                String(updatedAtDate.getDate()).padStart(2, "0") +
-                " " +
-                String(updatedAtDate.getHours()).padStart(2, "0") +
-                ":" +
-                String(updatedAtDate.getMinutes()).padStart(2, "0") +
-                ":" +
-                String(updatedAtDate.getSeconds()).padStart(2, "0");
+        for (let i: number = 0; i < data.messages.length; i++) {
+            const message = data.messages[i];
+
+            // Formatando a data
+            const date: string = await this.formatDate(message.updatedAt);
 
             // se tiver anexo
-            if (data.base64String) {
-                fileConvert = data.base64String.typeFile;
-                if (fileConvert.toLowerCase().startsWith("audio")) {
-                    fileConvert =
-                        "<div><audio controls><source src='" +
-                        data.base64String.base64String +
-                        "' type='" +
-                        fileConvert +
-                        "'>Your browser does not support the audio element.</audio></div>";
-                } else if (fileConvert.toLowerCase().startsWith("image")) {
-                    fileConvert =
-                        "<div><img height='100' src='" +
-                        data.base64String.base64String +
-                        "' alt='image'/></div>";
-                } else if (fileConvert.toLowerCase().startsWith("video")) {
-                    fileConvert =
-                        "<div><video width='160' height='120' controls><source src='" +
-                        data.base64String.base64String +
-                        "' type='" +
-                        fileConvert +
-                        "'>Your browser does not support the video element.</video></div>";
-                } else if (
-                    fileConvert.toLowerCase().startsWith("application")
-                ) {
-                    fileConvert =
-                        "<div><object width='160' height='120' data='data:" +
-                        data.base64String.base64String +
-                        "' type='" +
-                        fileConvert +
-                        "'>Your browser does not support the object element.</object></div>";
-                }
-            }
+            if (
+                message.base64File &&
+                message.base64File.typeFile &&
+                message.base64File.base64String
+            ) {
+                fileText = await this.formatFileToText(
+                    message.base64File,
+                    logger
+                );
 
-            if (data.messages[i] && data.mensagens[i].agent) {
-                if (data.messages[i].base64String) {
-                    text +=
-                        "<p>" +
-                        formattedDate +
-                        " - " +
-                        data.messages[i].agent.firstName +
-                        " (" +
-                        data.messages[i].agent.userName +
-                        "): " +
-                        fileConvert +
-                        "</p>";
-                } else {
-                    text +=
-                        "<p>" +
-                        formattedDate +
-                        " - " +
-                        data.messages[i].agent.firstName +
-                        " (" +
-                        data.messages[i].agent.userName +
-                        "): " +
-                        data.messages[i].messageText +
-                        "</p>";
+                logger.debug(`Debug - fileText - ${JSON.stringify(fileText)}`);
+
+                /*
+                if (data.mensagens[i].agent) {
+                    logger.debug(`Aqui 628`);
+                    if (data.messages[i].base64String) {
+                        text +=
+                            "<p>" +
+                            formattedDate +
+                            " - " +
+                            data.messages[i].agent.firstName +
+                            " (" +
+                            data.messages[i].agent.userName +
+                            "): " +
+                            fileConvert +
+                            "</p>";
+                    } else {
+                        text +=
+                            "<p>" +
+                            formattedDate +
+                            " - " +
+                            data.messages[i].agent.firstName +
+                            " (" +
+                            data.messages[i].agent.userName +
+                            "): " +
+                            data.messages[i].messageText +
+                            "</p>";
+                    }
                 }
-            } else {
-                if (data.messages[i].base64String) {
+
+                if (data.mensagens[i].visitor) {
                     text +=
                         "<p>" +
                         formattedDate +
@@ -663,9 +721,14 @@ export default class GlpiApi {
                         data.messages[i].messageText +
                         "</p>";
                 }
+                */
+
+                // logger.debug(
+                //     `Debug - formatTicketBody 00${i} - ${JSON.stringify(text)}`
+                // );
             }
-            bodyMessages.push(text);
         }
+        bodyMessages.push(text);
 
         return bodyMessages;
     }
