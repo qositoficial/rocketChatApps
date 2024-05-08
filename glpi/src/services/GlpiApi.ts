@@ -563,33 +563,18 @@ export default class GlpiApi {
         logger?: ILogger
     ): Promise<string> {
         let fileConvert: string = "";
-        base64File = base64File;
-        logger?.debug(`Debug b64 1 - ${JSON.stringify(base64File)}`);
 
-        logger?.debug(`Debug audio 1 - ${JSON.stringify(base64File.fileType)}`);
-        if (base64File && base64File.fileType) {
-            logger?.debug(
-                `Debug audio 2- ${JSON.stringify(base64File.fileType)}`
-            );
-            if (base64File.fileType.toLowerCase().startsWith("audio")) {
-                logger?.debug(
-                    `Debug audio 3 - ${JSON.stringify(base64File.fileType)}`
-                );
-            }
-        }
-        /*
-
+        if (base64File.typeFile.toLowerCase().startsWith("audio")) {
             fileConvert =
                 "<div><audio controls><source src='" +
                 base64File.base64String +
                 "' type='" +
-                base64File.fileType +
+                base64File.typeFile +
                 "'>Your browser does not support the audio element.</audio></div>";
             return fileConvert;
         }
 
-
-        if (base64File.fileType.toLowerCase().startsWith("image")) {
+        if (base64File.typeFile.toLowerCase().startsWith("image")) {
             fileConvert =
                 "<div><img height='100' src='" +
                 base64File.base64String +
@@ -597,26 +582,26 @@ export default class GlpiApi {
             return fileConvert;
         }
 
-        if (base64File.fileType.toLowerCase().startsWith("video")) {
+        if (base64File.typeFile.toLowerCase().startsWith("video")) {
             fileConvert =
                 "<div><video width='160' height='120' controls><source src='" +
                 base64File.base64String +
                 "' type='" +
-                base64File.fileType +
+                base64File.typeFile +
                 "'>Your browser does not support the video element.</video></div>";
             return fileConvert;
         }
 
-        if (base64File.fileType.toLowerCase().startsWith("application")) {
+        if (base64File.typeFile.toLowerCase().startsWith("application")) {
             fileConvert =
                 "<div><object width='160' height='120' data='data:" +
                 base64File.base64String +
                 "' type='" +
-                base64File.fileType +
+                base64File.typeFile +
                 "'>Your browser does not support the object element.</object></div>";
             return fileConvert;
         }
-*/
+
         return fileConvert;
     }
 
@@ -655,7 +640,9 @@ export default class GlpiApi {
             const message = data.messages[i];
 
             // Formatando a data
-            const date: string = await this.formatDate(message.updatedAt);
+            const formattedDate: string = await this.formatDate(
+                message.updatedAt
+            );
 
             // se tiver anexo
             if (
@@ -667,68 +654,67 @@ export default class GlpiApi {
                     message.base64File,
                     logger
                 );
+            }
 
-                logger.debug(`Debug - fileText - ${JSON.stringify(fileText)}`);
-
-                /*
-                if (data.mensagens[i].agent) {
-                    logger.debug(`Aqui 628`);
-                    if (data.messages[i].base64String) {
-                        text +=
-                            "<p>" +
-                            formattedDate +
-                            " - " +
-                            data.messages[i].agent.firstName +
-                            " (" +
-                            data.messages[i].agent.userName +
-                            "): " +
-                            fileConvert +
-                            "</p>";
-                    } else {
-                        text +=
-                            "<p>" +
-                            formattedDate +
-                            " - " +
-                            data.messages[i].agent.firstName +
-                            " (" +
-                            data.messages[i].agent.userName +
-                            "): " +
-                            data.messages[i].messageText +
-                            "</p>";
-                    }
-                }
-
-                if (data.mensagens[i].visitor) {
+            if (
+                message.agent &&
+                message.agent.userType !== "app" &&
+                message.agent.userType !== "bot"
+            ) {
+                if (fileText.length > 0) {
                     text +=
                         "<p>" +
                         formattedDate +
                         " - " +
-                        data.messages[i].visitor.firstName +
+                        message.agent.name +
                         " (" +
-                        data.messages[i].visitor.phone +
+                        message.agent.username +
                         "): " +
-                        fileConvert +
+                        fileText +
                         "</p>";
                 } else {
                     text +=
                         "<p>" +
                         formattedDate +
                         " - " +
-                        data.messages[i].visitor.firstName +
+                        message.agent.name +
                         " (" +
-                        data.messages[i].visitor.phone +
+                        message.agent.username +
                         "): " +
-                        data.messages[i].messageText +
-                        "</p>";
+                        message.messageText +
+                        "</p> ";
                 }
-                */
+            }
 
-                // logger.debug(
-                //     `Debug - formatTicketBody 00${i} - ${JSON.stringify(text)}`
-                // );
+            if (message.visitor && !message.agent) {
+                if (fileText.length > 0) {
+                    text +=
+                        "<p>" +
+                        formattedDate +
+                        " - " +
+                        message.visitor.name +
+                        " (" +
+                        message.visitor.phone +
+                        "): " +
+                        fileText +
+                        "</p>";
+                } else {
+                    text +=
+                        "<p>" +
+                        formattedDate +
+                        " - " +
+                        message.visitor.name +
+                        " (" +
+                        message.visitor.phone +
+                        "): " +
+                        message.messageText +
+                        "</p> ";
+                }
             }
         }
+
         bodyMessages.push(text);
+        logger.debug(`Debug messages 0001 - ${JSON.stringify(bodyMessages)}`);
 
         return bodyMessages;
     }
