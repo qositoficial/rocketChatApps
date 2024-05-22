@@ -247,6 +247,7 @@ export default class ProcessMessages {
             data.visitor = {
                 ...data.visitor,
                 phone: data.visitor.phone[0].phoneNumber,
+                agent: data.agent,
             };
         }
 
