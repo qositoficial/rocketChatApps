@@ -1,5 +1,5 @@
 # GLPI
-GLPI integration with Rocket.Chat
+This app integrates RocketChat with GLPI
 
 ## Getting Started
 Now that you have generated a blank default Rocket.Chat App, what are you supposed to do next?

@@ -1,5 +1,5 @@
 {
-    "url": "https://chat.qosit.com.br",
+    "url": "http://localhost:3000",
     "username": "",
     "password": "",
     "ignoredFiles": [

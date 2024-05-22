@@ -4,7 +4,7 @@ import {
     SettingType,
 } from "@rocket.chat/apps-engine/definition/settings";
 
-export const CONFIG_GLPI_URL = "glpi_url";
+export const CONFIG_GLPI_API_URL = "glpi_api_url";
 export const CONFIG_GLPI_USER_TOKEN = "glpi_user_token";
 export const CONFIG_GLPI_APP_TOKEN = "glpi_app_token";
 export const CONFIG_GLPI_DEPARTMENTS = "glpi_departments";
@@ -15,13 +15,13 @@ export const CONFIG_GLPI_NEW_TICKET_MESSAGE = "glpi_new_ticket_message";
 
 export const SETTINGS: Array<ISetting> = [
     {
-        id: CONFIG_GLPI_URL,
+        id: CONFIG_GLPI_API_URL,
         type: SettingType.STRING,
         packageValue: "http://glpi",
         required: true,
         public: false,
-        i18nLabel: `config_${CONFIG_GLPI_URL}_label`,
-        i18nDescription: `config_${CONFIG_GLPI_URL}_description`,
+        i18nLabel: `config_${CONFIG_GLPI_API_URL}_label`,
+        i18nDescription: `config_${CONFIG_GLPI_API_URL}_description`,
     },
     {
         id: CONFIG_GLPI_USER_TOKEN,

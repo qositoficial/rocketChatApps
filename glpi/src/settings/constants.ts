@@ -1,1 +1,1 @@
-export const ApiGlpiTimeout = 30000;
+export const timeout = 30000;
