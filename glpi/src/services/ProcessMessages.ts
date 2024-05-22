@@ -13,7 +13,6 @@ import {
     RocketChatAssociationRecord,
 } from "@rocket.chat/apps-engine/definition/metadata";
 import { UserType } from "@rocket.chat/apps-engine/definition/users";
-import { timeout } from "../settings/constants";
 
 export default class ProcessMessages {
     public static async processData(
@@ -116,25 +115,6 @@ export default class ProcessMessages {
                     message.attachments[0].audioUrl ||
                     message.attachments[0].videoUrl ||
                     message.attachments[0]!.title!.link!;
-
-                const responseAtachment = await http.get(
-                    "http://localhost:3000" + attachUrl,
-                    {
-                        encoding: null,
-                        timeout: timeout,
-                        headers: {
-                            "X-Auth-Token":
-                                "6iiou5rF5UepBwEJcVgrtj-dFakORyqBVasW9yJL6j6",
-                            "X-User-Id": "zYNxGxjS9NBp95Tqn",
-                        },
-                    }
-                );
-
-                const base64File = await this.convertAtachment(
-                    responseAtachment
-                );
-
-                messageAsObject["base64File"] = base64File;
 
                 if (attachUrl.indexOf("http") != 0) {
                     attachUrl = `${serverUrl + attachUrl}`;
@@ -274,6 +254,7 @@ export default class ProcessMessages {
         return data;
     }
 
+    // update rocketchat user data
     public static async getUser(
         userType: string,
         room: ILivechatRoom,
@@ -326,18 +307,6 @@ export default class ProcessMessages {
             };
 
             return visitor;
-        }
-    }
-
-    private static async convertAtachment(data: any): Promise<any> {
-        if (data) {
-            const fileConvert = {};
-            fileConvert["typeFile"] = data.headers["content-type"];
-            fileConvert["base64String"] = Buffer.from(
-                data.content,
-                "binary"
-            ).toString("base64");
-            return fileConvert;
         }
     }
 }

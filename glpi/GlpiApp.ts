@@ -158,6 +158,7 @@ export class GlpiApp
         const GLPI_TICKET_NUMBER = await GlpiApi.createTicket(
             http,
             read,
+            context.room,
             this.getLogger(),
             GLPI_FULL_USER,
             department

@@ -12,7 +12,7 @@ import {
     CONFIG_GLPI_USER_TOKEN,
     getSettingValue,
 } from "../settings/settings";
-import { GlpiEnvironment, timeout } from "../settings/constants";
+import { timeout } from "../settings/constants";
 import { IRoom } from "@rocket.chat/apps-engine/definition/rooms";
 
 export default class GlpiApi {
@@ -48,6 +48,11 @@ export default class GlpiApi {
             CONFIG_GLPI_DEFAULT_USER
         );
 
+        const ROCKET_CHAT_URL = await read
+            .getEnvironmentReader()
+            .getServerSettings()
+            .getValueById("Site_Url");
+
         return {
             GLPI_URL,
             GLPI_APP_TOKEN,
@@ -55,8 +60,10 @@ export default class GlpiApi {
             GLPI_SUBJECT_DEFAULT,
             GLPI_REQUEST_ORIGIN_ID,
             GLPI_DEFAULT_USER,
+            ROCKET_CHAT_URL,
         };
     }
+
     //inicia sessão e retorna o token
     private static async initSession(
         http: IHttp,
@@ -314,7 +321,7 @@ export default class GlpiApi {
         return FULL_USER;
     }
 
-    //retorna dados do usuário
+    //busca dados do usuário
     public static async searchUser(
         http: IHttp,
         read: IRead,
@@ -407,6 +414,7 @@ export default class GlpiApi {
     public static async createTicket(
         http: IHttp,
         read: IRead,
+        room: IRoom,
         logger: ILogger,
         GlpiFullUser: any,
         departmentName: string
@@ -417,6 +425,7 @@ export default class GlpiApi {
             GLPI_USER_TOKEN,
             GLPI_SUBJECT_DEFAULT,
             GLPI_REQUEST_ORIGIN_ID,
+            ROCKET_CHAT_URL,
         } = await this.getEnv(read, logger);
 
         const glpiSessionToken = await this.initSession(http, read, logger);
@@ -433,7 +442,7 @@ export default class GlpiApi {
                 data: {
                     input: {
                         name: GLPI_SUBJECT_DEFAULT,
-                        content: `Ticket: ${GLPI_SUBJECT_DEFAULT} \nDepartamento: ${departmentName}`,
+                        content: `Ticket: ${GLPI_SUBJECT_DEFAULT} \nDepartamento: ${departmentName} \nLink do chat: ${ROCKET_CHAT_URL}/live/${room.id}`,
                         _users_id_requester: GlpiFullUser.userID,
                         requesttypes_id: GLPI_REQUEST_ORIGIN_ID,
                         entities_id: GlpiFullUser.entity.entityID,
@@ -483,53 +492,62 @@ export default class GlpiApi {
             GLPI_APP_TOKEN,
             GLPI_USER_TOKEN,
             GLPI_REQUEST_ORIGIN_ID,
+            GLPI_DEFAULT_USER,
         } = await this.getEnv(read, logger);
 
         const glpiSessionToken = await this.initSession(http, read, logger);
-        /*
+
         const tickets = await this.formatTickets(data, room, logger);
 
         if (!tickets) {
             return;
         }
-        */
+
         const ticketBody = await this.formatTicketBody(data, logger);
 
-        // if (ticketBody) {
-        //     for (let c = 0; c < ticketBody.length; c++) {
-        //         for (let i = 0; i < tickets.length; i++) {
-        //             const response = await http.post(
-        //                 GLPI_URL +
-        //                     "/apirest.php/Ticket/" +
-        //                     tickets[i] +
-        //                     "/ITILFollowup",
-        //                 {
-        //                     timeout: timeout,
-        //                     headers: {
-        //                         "App-Token": GLPI_APP_TOKEN,
-        //                         "Session-Token": glpiSessionToken,
-        //                         "Content-Type": "application/json",
-        //                     },
-        //                     data: {
-        //                         input: {
-        //                             itemtype: "Ticket",
-        //                             items_id: tickets[i],
-        //                             users_id: data.agent.userID,
-        //                             requesttypes_id: GLPI_REQUEST_ORIGIN_ID,
-        //                             entities_id: data.visitor.entity.entityID,
-        //                             content: ticketBody[c],
-        //                         },
-        //                     },
-        //                 }
-        //             );
-        //             if (logger) {
-        //                 logger.debug(
-        //                     "GlpiCloseChat 2 - " + JSON.stringify(response)
-        //                 );
-        //             }
-        //         }
-        //     }
-        // }
+        if (!ticketBody) {
+            return;
+        }
+
+        let glpiFullUser = await this.searchUser(
+            http,
+            read,
+            logger,
+            room["visitor"].visitorEmails[0].address,
+            room["visitor"].username,
+            room["visitor"].phone[0].phoneNumber
+        );
+
+        logger.debug(`Close Debug - 0001 - ${JSON.stringify(glpiFullUser)}`);
+
+        for (let c = 0; c < ticketBody.length; c++) {
+            for (let i = 0; i < tickets.length; i++) {
+                const response = await http.post(
+                    GLPI_URL +
+                        "/apirest.php/Ticket/" +
+                        tickets[i] +
+                        "/ITILFollowup",
+                    {
+                        timeout: timeout,
+                        headers: {
+                            "App-Token": GLPI_APP_TOKEN,
+                            "Session-Token": glpiSessionToken,
+                            "Content-Type": "application/json",
+                        },
+                        data: {
+                            input: {
+                                itemtype: "Ticket",
+                                items_id: tickets[i],
+                                users_id: glpiFullUser._id,
+                                requesttypes_id: GLPI_REQUEST_ORIGIN_ID,
+                                entities_id: glpiFullUser.entity.entityID,
+                                content: ticketBody[c],
+                            },
+                        },
+                    }
+                );
+            }
+        }
 
         this.killSession(http, read, logger, glpiSessionToken);
     }
@@ -556,53 +574,6 @@ export default class GlpiApi {
         }
 
         return ticketNumbers;
-    }
-
-    private static async formatFileToText(
-        base64File: any,
-        logger?: ILogger
-    ): Promise<string> {
-        let fileConvert: string = "";
-
-        if (base64File.typeFile.toLowerCase().startsWith("audio")) {
-            fileConvert =
-                "<div><audio controls><source src='" +
-                base64File.base64String +
-                "' type='" +
-                base64File.typeFile +
-                "'>Your browser does not support the audio element.</audio></div>";
-            return fileConvert;
-        }
-
-        if (base64File.typeFile.toLowerCase().startsWith("image")) {
-            fileConvert =
-                "<div><img height='100' src='" +
-                base64File.base64String +
-                "' alt='image'/></div>";
-            return fileConvert;
-        }
-
-        if (base64File.typeFile.toLowerCase().startsWith("video")) {
-            fileConvert =
-                "<div><video width='160' height='120' controls><source src='" +
-                base64File.base64String +
-                "' type='" +
-                base64File.typeFile +
-                "'>Your browser does not support the video element.</video></div>";
-            return fileConvert;
-        }
-
-        if (base64File.typeFile.toLowerCase().startsWith("application")) {
-            fileConvert =
-                "<div><object width='160' height='120' data='data:" +
-                base64File.base64String +
-                "' type='" +
-                base64File.typeFile +
-                "'>Your browser does not support the object element.</object></div>";
-            return fileConvert;
-        }
-
-        return fileConvert;
     }
 
     private static async formatDate(date: string): Promise<string> {
@@ -645,6 +616,40 @@ export default class GlpiApi {
             );
 
             // se tiver anexo
+            if (message.file) {
+                logger.debug(
+                    `Aqui file 001: ${JSON.stringify(
+                        message.file.type
+                    )} - ${JSON.stringify(message.fileUpload.publicFilePath)}`
+                );
+                if (message.file.type.toLowerCase().startsWith("audio")) {
+                    fileText =
+                        "<p></p><audio src='" +
+                        message.fileUpload.publicFilePath +
+                        "' controls buffered >To listen to the audio you must be logged in to the chat.</audio></p>";
+                }
+                if (message.file.type.toLowerCase().startsWith("image")) {
+                    fileText =
+                        "<p><img height='180' src='" +
+                        message.fileUpload.publicFilePath +
+                        "' alt='To see the image you need to be logged in to the chat' controls buffered ></p>";
+                }
+
+                if (message.file.type.toLowerCase().startsWith("video")) {
+                    fileText =
+                        "<p><video width='240' height='180' src='" +
+                        message.fileUpload.publicFilePath +
+                        "' controls buffered >To watch to the video you must be logged in to the chat.</video></p>";
+                }
+
+                if (message.file.type.toLowerCase().startsWith("application")) {
+                    fileText =
+                        "<p><object width='240' height='180' data='" +
+                        message.fileUpload.publicFilePath +
+                        "'>Unsupported file </object></p>";
+                }
+            }
+            /*
             if (
                 message.base64File &&
                 message.base64File.typeFile &&
@@ -655,11 +660,13 @@ export default class GlpiApi {
                     logger
                 );
             }
+            */
 
             if (
                 message.agent &&
-                message.agent.userType !== "app" &&
-                message.agent.userType !== "bot"
+                message.agent.userType != "app" &&
+                message.agent.userType != "bot" &&
+                message.agent.username != "qos-bot"
             ) {
                 if (fileText.length > 0) {
                     text +=
@@ -686,7 +693,12 @@ export default class GlpiApi {
                 }
             }
 
-            if (message.visitor && !message.agent) {
+            if (
+                message.visitor &&
+                !message.agent &&
+                message.messageText != "Usuário enviou um áudio!"
+            ) {
+                logger.debug(`Debug 0001 : ${JSON.stringify(message)}`);
                 if (fileText.length > 0) {
                     text +=
                         "<p>" +
@@ -713,8 +725,7 @@ export default class GlpiApi {
             }
         }
 
-        bodyMessages.push(text);
-        logger.debug(`Debug messages 0001 - ${JSON.stringify(bodyMessages)}`);
+        await bodyMessages.push(text);
 
         return bodyMessages;
     }
